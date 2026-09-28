@@ -32,16 +32,16 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ClipHat-Windows-installer
-          path: dist/ClipHat-1.3.0-Windows-Setup.exe
+          path: dist/ClipHat-1.3.1-Windows-Setup.exe
       - name: Publish release
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          gh release view v1.3.0-windows *> $null
+          gh release view v1.3.1-windows *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload v1.3.0-windows dist/ClipHat-1.3.0-Windows-Setup.exe --clobber
+            gh release upload v1.3.1-windows dist/ClipHat-1.3.1-Windows-Setup.exe --clobber
           } else {
-            gh release create v1.3.0-windows dist/ClipHat-1.3.0-Windows-Setup.exe --title "ClipHat for Windows 1.3.0" --notes "Windows 10/11 x64 installer with rounded cards, icon filters, large previews, and thumbtack to keep the panel open."
+            gh release create v1.3.1-windows dist/ClipHat-1.3.1-Windows-Setup.exe --title "ClipHat for Windows 1.3.1" --notes "Windows 10/11 x64 installer with rounded cards, icon filters, large previews, and thumbtack to keep the panel open."
           }

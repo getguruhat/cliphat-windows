@@ -53,7 +53,7 @@ internal static class PanelSmokeTest
     private static void Capture(Form form, string path)
     {
         using var bitmap = new Bitmap(form.Width, form.Height);
-        form.DrawToBitmap(bitmap, form.ClientRectangle);
+        form.DrawToBitmap(bitmap, new Rectangle(Point.Empty, form.Size));
         bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
     }
     private static void Pump(int milliseconds)
