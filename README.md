@@ -6,13 +6,13 @@ ClipHat is a native Windows clipboard history app from GuruHat. It stores copied
 
 ## Install the latest build
 
-Download the ready-to-install package: [ClipHat-1.0.0-Windows-Setup.exe](ClipHat-1.0.0-Windows-Setup.exe).
+Download the ready-to-install package: [ClipHat-1.1.0-Windows-Setup.exe](ClipHat-1.1.0-Windows-Setup.exe).
 
 Run the installer on Windows 10 or 11 (x64), then launch ClipHat. Windows may show a SmartScreen warning because this community build is not code signed.
 
 ## Use
 
-- Copy text, links, images, or a regular file, then press **Ctrl+Shift+V** to open history.
+- Copy text, links, images, or a regular file, then press **Ctrl+Shift+V** to slide history in from the side of the active screen. Choose the left or right edge in Settings.
 - Search or filter by type, and click an item or press **Enter** to put it back on the clipboard. Press **Ctrl+V** in the target app to paste.
 - Use the star to pin an item. Right-click a card to copy, pin, delete, or open a link.
 - Use Settings to pause capture, select content types, set retention, clear history, or launch at login.
@@ -27,6 +27,6 @@ The source is a .NET 8 Windows Forms project. On Windows with the .NET 8 SDK:
 dotnet run --project ClipHat.csproj
 ```
 
-GitHub Actions publishes a self-contained x64 build, packages it with Inno Setup, and attaches the installer to the [Windows release](https://github.com/getguruhat/cliphat-windows/releases/tag/v1.0.0-windows).
+GitHub Actions publishes a self-contained x64 build, packages it with Inno Setup, and attaches the installer to the [Windows release](https://github.com/getguruhat/cliphat-windows/releases/tag/v1.1.0-windows).
 
 The macOS version is available at [cliphat-macos](https://github.com/getguruhat/cliphat-macos).
