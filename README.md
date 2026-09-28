@@ -6,7 +6,7 @@ ClipHat is a native Windows clipboard history app from GuruHat. It stores copied
 
 ## Install the latest build
 
-Download the ready-to-install package: [ClipHat-1.0.0-Windows-Setup.exe](https://github.com/getguruhat/cliphat-windows/releases/download/v1.0.0-windows/ClipHat-1.0.0-Windows-Setup.exe).
+Download the ready-to-install package: [ClipHat-1.0.0-Windows-Setup.exe](ClipHat-1.0.0-Windows-Setup.exe).
 
 Run the installer on Windows 10 or 11 (x64), then launch ClipHat. Windows may show a SmartScreen warning because this community build is not code signed.
 
