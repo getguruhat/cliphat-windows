@@ -35,6 +35,16 @@ internal static class PanelSmokeTest
             Capture(panel, "screenshots/compact.png");
             history.Settings.LargePreviews = true; panel.RefreshItems(); Pump(100);
             Capture(panel, "screenshots/large-previews.png");
+            using (var settings = new SettingsWindow(history))
+            {
+                settings.Show(); Pump(150);
+                foreach (var page in new[] { "General", "History", "Privacy", "About" })
+                {
+                    settings.SelectPage(page); Pump(100); Capture(settings, "screenshots/settings-" + page.ToLowerInvariant() + ".png");
+                }
+                settings.Close();
+            }
+            panel.Activate(); Pump(100);
             panel.TogglePanelPin(); other.Show(); other.Activate(); Pump(400);
             if (panel.Visible) throw new InvalidOperationException("Unpinned panel did not dismiss when another app was activated.");
         }

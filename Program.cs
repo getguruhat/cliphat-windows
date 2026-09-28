@@ -47,6 +47,7 @@ internal sealed class Settings
     public string PanelSide { get; set; } = "Left";
     public bool PanelPinned { get; set; }
     public bool LargePreviews { get; set; }
+    public List<string> IgnoredApps { get; set; } = ["1Password", "Bitwarden", "KeePass", "KeePassXC", "Dashlane", "Enpass"];
 }
 
 internal sealed class History
@@ -157,6 +158,8 @@ internal sealed class ClipHatContext : ApplicationContext
         if (restoring || history.Settings.Paused) return;
         try
         {
+            var source = ClipboardSource();
+            if (source != null && history.Settings.IgnoredApps.Contains(source, StringComparer.OrdinalIgnoreCase)) return;
             var data = Clipboard.GetDataObject();
             if (data == null) return;
             var formats = data.GetFormats();
@@ -192,7 +195,7 @@ internal sealed class ClipHatContext : ApplicationContext
                     item = new ClipItem { Kind = Uri.TryCreate(value, UriKind.Absolute, out var url) && (url.Scheme == "https" || url.Scheme == "http") ? "link" : "text", Text = value };
             }
             if (item == null) return;
-            item.Source = ClipboardSource();
+            item.Source = source;
             item.Fingerprint = Convert.ToHexString(SHA256.HashData(payload ?? Encoding.UTF8.GetBytes(item.Kind + ":" + item.Text)));
             if (payload != null && !history.Items.Any(x => x.Fingerprint == item.Fingerprint)) item.Payload = history.SavePayload(payload, item.FileName!);
             history.Add(item);
@@ -234,7 +237,7 @@ internal sealed class ClipHatContext : ApplicationContext
     }
     private void OpenSettings()
     {
-        using var settings = new SettingsWindow(history);
+        using var settings = new SettingsWindow(history, Quit);
         settings.ShowDialog();
         history.Trim(); window.RefreshItems();
     }

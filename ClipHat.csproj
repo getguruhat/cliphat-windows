@@ -7,7 +7,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>ClipHat</AssemblyName>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <ApplicationIcon>assets\ClipHat.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="assets/ClipHat.png" LogicalName="ClipHat.AppIcon.png" />
+  </ItemGroup>
 </Project>

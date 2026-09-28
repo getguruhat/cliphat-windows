@@ -1,5 +1,5 @@
 #define AppName "ClipHat"
-#define AppVersion "1.2.0"
+#define AppVersion "1.3.0"
 [Setup]
 AppId={{E1A90BA8-26D8-47D3-85A6-7CC8C8652B4F}
 AppName={#AppName}
@@ -8,7 +8,7 @@ AppPublisher=GuruHat
 DefaultDirName={autopf}\ClipHat
 DefaultGroupName=ClipHat
 OutputDir=dist
-OutputBaseFilename=ClipHat-1.2.0-Windows-Setup
+OutputBaseFilename=ClipHat-1.3.0-Windows-Setup
 Compression=lzma2
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
