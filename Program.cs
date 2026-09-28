@@ -42,6 +42,7 @@ internal sealed class Settings
     public bool CaptureImages { get; set; } = true;
     public bool CaptureFiles { get; set; } = true;
     public bool LaunchAtLogin { get; set; }
+    public string PanelSide { get; set; } = "Left";
 }
 
 internal sealed class History
@@ -121,8 +122,8 @@ internal sealed class ClipHatContext : ApplicationContext
     public ClipHatContext()
     {
         window = new MainWindow(history, Restore, OpenSettings, Quit);
-        window.FormClosing += (_, e) => { if (e.CloseReason != CloseReason.ApplicationExitCall) { e.Cancel = true; window.Hide(); } };
-        window.HotkeyPressed += () => { if (window.Visible) window.Hide(); else Show(); };
+        window.FormClosing += (_, e) => { if (e.CloseReason != CloseReason.ApplicationExitCall) { e.Cancel = true; window.ClosePanel(); } };
+        window.HotkeyPressed += () => { if (window.Visible) window.ClosePanel(); else Show(); };
         tray = new NotifyIcon { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath), Text = "ClipHat — Ctrl+Shift+V", Visible = true };
         tray.DoubleClick += (_, _) => Show();
         tray.ContextMenuStrip = new ContextMenuStrip();
@@ -139,9 +140,7 @@ internal sealed class ClipHatContext : ApplicationContext
     private void Show()
     {
         window.RefreshItems();
-        var area = Screen.FromPoint(Cursor.Position).WorkingArea;
-        window.Location = new Point(area.Left + 16, area.Top + Math.Max(16, (area.Height - window.Height) / 2));
-        window.Show(); window.Activate(); window.FocusSearch();
+        window.OpenPanel(Screen.FromPoint(Cursor.Position), history.Settings.PanelSide);
     }
     private void TogglePause() { history.Settings.Paused = !history.Settings.Paused; history.Save(); window.RefreshItems(); }
     private void Poll()
@@ -209,7 +208,7 @@ internal sealed class ClipHatContext : ApplicationContext
             }
             else Clipboard.SetText(item.Text);
             sequence = Native.GetClipboardSequenceNumber();
-            window.Hide();
+            window.ClosePanel();
         }
         catch (Exception e) when (e is ExternalException or IOException or UnauthorizedAccessException) { MessageBox.Show(e.Message, "ClipHat", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         finally { restoring = false; }
