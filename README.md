@@ -12,6 +12,10 @@ Run the installer on Windows 10 or 11 (x64), then launch ClipHat. Windows may sh
 
 When upgrading, quit ClipHat from its notification-area menu, run the new installer, and launch it again. The sliding panel has no Windows title bar. Settings displays the installed version.
 
+## Windows panel
+
+![ClipHat Windows panel with rounded cards and thumbtack](docs/windows-panel.png)
+
 ## Use
 
 - Copy text, links, images, or a regular file, then press **Ctrl+Shift+V** to slide history in from the side of the active screen. Choose the left or right edge in Settings.
