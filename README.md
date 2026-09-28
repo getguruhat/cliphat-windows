@@ -25,7 +25,7 @@ When upgrading, quit ClipHat from its notification-area menu, run the new instal
 - Use **Up/Down** to select a card, **Enter** to copy, **Ctrl+F** to search, and **Ctrl+Delete** to delete.
 - Search or filter by type, and click an item or press **Enter** to put it back on the clipboard. Press **Ctrl+V** in the target app to paste.
 - Right-click a card to copy, pin/unpin an item, delete it, or open a link. Item pins protect entries from retention; the toolbar thumbtack controls whether the panel stays open. The red × on each card deletes that entry.
-- Use Settings to pause capture, select content types, set retention, clear history, or launch at login.
+- Settings uses General, History, Privacy, and About tabs, matching the macOS layout. Configure startup, previews, retention, and ignored applications; the About tab displays the ClipHat app icon.
 
 ClipHat stores history in `%LOCALAPPDATA%\GuruHat\ClipHat`. There are no accounts, cloud services, analytics, or network calls. Text is limited to 1 MB, images to 10 MB, and individual files to 20 MB. Copied folders are skipped.
 
