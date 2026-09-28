@@ -23,7 +23,7 @@ internal static class Theme
         {
             case "search": g.DrawEllipse(p, 3, 3, 12, 12); g.DrawLine(p, 14, 14, 21, 21); break;
             case "all": foreach (var x in new[] { 3, 14 }) foreach (var y in new[] { 3, 14 }) g.DrawRectangle(p, x, y, 7, 7); break;
-            case "text": using (var f = new Font("Segoe UI", 13, FontStyle.Regular, GraphicsUnit.Pixel)) g.DrawString("Aa", f, brush, 0, 3); break;
+            case "text": using (var f = new Font("Segoe UI", 19, FontStyle.Regular, GraphicsUnit.Pixel)) g.DrawString("Aa", f, brush, -1, 0); break;
             case "link":
                 g.RotateTransform(-40, MatrixOrder.Prepend);
                 g.ResetTransform(); g.Restore(state); state = g.Save();
@@ -56,7 +56,7 @@ internal sealed class IconButton : Button
         if (Active || ClientRectangle.Contains(PointToClient(Cursor.Position))) { using var b = new SolidBrush(Color.FromArgb(239, 247, 255)); using var p = Theme.Rounded(new RectangleF(1, 1, Width - 2, Height - 2), 8 * DeviceDpi / 96f); e.Graphics.FillPath(b, p); }
         float size = 21 * DeviceDpi / 96f;
         Theme.Icon(e.Graphics, IconName, new RectangleF((Width - size) / 2, (Height - size) / 2, size, size), Active ? Theme.Blue : Theme.Muted);
-        if (Focused) ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(ClientRectangle, -3, -3));
+        if (Focused && ShowFocusCues) ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(ClientRectangle, -3, -3));
     }
 }
 
@@ -88,6 +88,10 @@ internal sealed class HistoryCard : Control
         menu.Items.Add(item.Pinned ? "Unpin item" : "Pin item", null, (_, _) => Pin?.Invoke());
         if (item.Kind == "link") menu.Items.Add("Open link", null, (_, _) => { if (Uri.TryCreate(item.Text, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https") Process.Start(new ProcessStartInfo(item.Text) { UseShellExecute = true }); });
         menu.Items.Add("Delete", null, (_, _) => Delete?.Invoke()); ContextMenuStrip = menu;
+    }
+    protected override void OnDpiChangedAfterParent(EventArgs e)
+    {
+        base.OnDpiChangedAfterParent(e); Height = (int)((large ? 236 : 120) * S);
     }
     protected override void OnPaint(PaintEventArgs e)
     {

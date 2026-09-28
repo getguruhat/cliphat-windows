@@ -152,7 +152,12 @@ internal sealed class MainWindow : Form
                 lastDate = date;
             }
             var card = new HistoryCard(item, history.Settings.LargePreviews) { Selected = item.Id == selected, Margin = new Padding(Px(11), Px(5), Px(11), Px(5)) };
-            card.Restore += () => restore(item);
+            card.Restore += () =>
+            {
+                selected = item.Id;
+                foreach (var visibleCard in cards.Controls.OfType<HistoryCard>()) visibleCard.Selected = visibleCard.Item.Id == selected;
+                restore(item);
+            };
             card.Delete += () => { history.Remove(item); RefreshItems(); };
             card.Pin += () => { item.Pinned = !item.Pinned; SaveAndRefresh(); };
             tips.SetToolTip(card, item.FileName != null ? item.Text : "Click to copy • Right-click for more options");
@@ -170,7 +175,7 @@ internal sealed class MainWindow : Form
     }
     private void ResizeCards()
     {
-        foreach (Control control in cards.Controls) control.Width = Math.Max(Px(180), cards.ClientSize.Width - Px(28) - SystemInformation.VerticalScrollBarWidth);
+        foreach (Control control in cards.Controls) control.Width = Math.Max(Px(180), cards.ClientSize.Width - Px(24));
     }
     protected override void Dispose(bool disposing)
     {
