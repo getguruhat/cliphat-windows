@@ -13,12 +13,13 @@ namespace ClipHat;
 internal static class Program
 {
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
         using var mutex = new Mutex(true, "GuruHat.ClipHat.Windows", out var first);
         if (!first) return;
         ApplicationConfiguration.Initialize();
-        Application.Run(new ClipHatContext());
+        if (args.Contains("--smoke-test")) { PanelSmokeTest.Run(); return; }
+        Application.Run(new ClipHatContext(args.Contains("--show-history")));
     }
 }
 
@@ -119,7 +120,7 @@ internal sealed class ClipHatContext : ApplicationContext
     private uint sequence;
     private bool restoring;
     private const int Hotkey = 0x4231;
-    public ClipHatContext()
+    public ClipHatContext(bool showHistory = false)
     {
         window = new MainWindow(history, Restore, OpenSettings, Quit);
         window.FormClosing += (_, e) => { if (e.CloseReason != CloseReason.ApplicationExitCall) { e.Cancel = true; window.ClosePanel(); } };
@@ -136,6 +137,7 @@ internal sealed class ClipHatContext : ApplicationContext
         sequence = Native.GetClipboardSequenceNumber();
         window.EnsureHotkey(Hotkey);
         timer.Start();
+        if (showHistory) Show();
     }
     private void Show()
     {

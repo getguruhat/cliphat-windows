@@ -126,7 +126,7 @@ internal sealed class SettingsWindow : Form
 {
     public SettingsWindow(History history)
     {
-        Text = "ClipHat Settings"; Size = new Size(420, 390); StartPosition = FormStartPosition.CenterScreen; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; MinimizeBox = false;
+        Text = "ClipHat Settings — 1.1.1"; Size = new Size(420, 390); StartPosition = FormStartPosition.CenterScreen; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; MinimizeBox = false;
         var settings = history.Settings;
         var layout = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(20), AutoScroll = true };
         var limitLabel = new Label { Text = "Keep clipboard items", AutoSize = true, Font = new Font("Segoe UI", 10, FontStyle.Bold), Margin = new Padding(3, 0, 0, 4) };
