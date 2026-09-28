@@ -22,24 +22,26 @@ jobs:
         run: |
           $app = Start-Process publish/ClipHat.exe -ArgumentList '--smoke-test' -PassThru -Wait
           if ($app.ExitCode -ne 0) { throw "Panel smoke test failed: $($app.ExitCode)" }
-      - name: Installer tools ready
-        run: Write-Output "Building verified application"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Windows-panel-screenshots
+          path: screenshots/*.png
       - name: Build installer
         shell: pwsh
         run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss'
       - uses: actions/upload-artifact@v4
         with:
           name: ClipHat-Windows-installer
-          path: dist/ClipHat-1.1.1-Windows-Setup.exe
+          path: dist/ClipHat-1.2.0-Windows-Setup.exe
       - name: Publish release
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          gh release view v1.1.1-windows *> $null
+          gh release view v1.2.0-windows *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload v1.1.1-windows dist/ClipHat-1.1.1-Windows-Setup.exe --clobber
+            gh release upload v1.2.0-windows dist/ClipHat-1.2.0-Windows-Setup.exe --clobber
           } else {
-            gh release create v1.1.1-windows dist/ClipHat-1.1.1-Windows-Setup.exe --title "ClipHat for Windows 1.1.1" --notes "Windows 10/11 x64 installer with sliding side panel."
+            gh release create v1.2.0-windows dist/ClipHat-1.2.0-Windows-Setup.exe --title "ClipHat for Windows 1.2.0" --notes "Windows 10/11 x64 installer with rounded cards, icon filters, large previews, and thumbtack to keep the panel open."
           }

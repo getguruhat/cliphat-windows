@@ -26,6 +26,7 @@ internal static class Program
 internal sealed class ClipItem
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string? Source { get; set; }
     public string Kind { get; set; } = "text";
     public string Text { get; set; } = "";
     public string? FileName { get; set; }
@@ -44,16 +45,19 @@ internal sealed class Settings
     public bool CaptureFiles { get; set; } = true;
     public bool LaunchAtLogin { get; set; }
     public string PanelSide { get; set; } = "Left";
+    public bool PanelPinned { get; set; }
+    public bool LargePreviews { get; set; }
 }
 
 internal sealed class History
 {
-    private readonly string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GuruHat", "ClipHat");
+    private readonly string folder;
     private readonly string index;
     public List<ClipItem> Items { get; private set; } = [];
     public Settings Settings { get; private set; } = new();
-    public History()
+    public History(string? storageFolder = null)
     {
+        folder = storageFolder ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GuruHat", "ClipHat");
         Directory.CreateDirectory(folder);
         index = Path.Combine(folder, "history.json");
         try { Items = JsonSerializer.Deserialize<List<ClipItem>>(File.ReadAllText(index)) ?? []; } catch (IOException) { } catch (JsonException) { }
@@ -188,12 +192,25 @@ internal sealed class ClipHatContext : ApplicationContext
                     item = new ClipItem { Kind = Uri.TryCreate(value, UriKind.Absolute, out var url) && (url.Scheme == "https" || url.Scheme == "http") ? "link" : "text", Text = value };
             }
             if (item == null) return;
+            item.Source = ClipboardSource();
             item.Fingerprint = Convert.ToHexString(SHA256.HashData(payload ?? Encoding.UTF8.GetBytes(item.Kind + ":" + item.Text)));
             if (payload != null && !history.Items.Any(x => x.Fingerprint == item.Fingerprint)) item.Payload = history.SavePayload(payload, item.FileName!);
             history.Add(item);
             window.RefreshItems();
         }
         catch (Exception e) when (e is ExternalException or IOException or UnauthorizedAccessException or ArgumentException) { }
+    }
+    private static string? ClipboardSource()
+    {
+        try
+        {
+            var handle = Native.GetClipboardOwner();
+            if (handle == IntPtr.Zero) handle = Native.GetForegroundWindow();
+            Native.GetWindowThreadProcessId(handle, out var processId);
+            using var process = Process.GetProcessById((int)processId);
+            return process.ProcessName;
+        }
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception) { return null; }
     }
     private void Restore(ClipItem item)
     {
@@ -210,7 +227,7 @@ internal sealed class ClipHatContext : ApplicationContext
             }
             else Clipboard.SetText(item.Text);
             sequence = Native.GetClipboardSequenceNumber();
-            window.ClosePanel();
+            if (!history.Settings.PanelPinned) window.ClosePanel();
         }
         catch (Exception e) when (e is ExternalException or IOException or UnauthorizedAccessException) { MessageBox.Show(e.Message, "ClipHat", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         finally { restoring = false; }
@@ -226,6 +243,9 @@ internal sealed class ClipHatContext : ApplicationContext
 
 internal static class Native
 {
+    [DllImport("user32.dll")] public static extern IntPtr GetClipboardOwner();
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr handle, out uint processId);
     [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern uint GetClipboardSequenceNumber();
     [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool RegisterHotKey(IntPtr handle, int id, uint modifiers, uint key);
     [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool UnregisterHotKey(IntPtr handle, int id);

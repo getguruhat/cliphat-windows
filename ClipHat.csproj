@@ -2,11 +2,12 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>ClipHat</AssemblyName>
-    <Version>1.1.1</Version>
+    <Version>1.2.0</Version>
     <ApplicationIcon>assets\ClipHat.ico</ApplicationIcon>
   </PropertyGroup>
 </Project>

@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Microsoft.Win32;
+using System.Drawing.Drawing2D;
 
 namespace ClipHat;
 
@@ -7,158 +7,174 @@ internal sealed class MainWindow : Form
 {
     private readonly History history;
     private readonly Action<ClipItem> restore;
-    private readonly Action settings;
-    private readonly Action quit;
-    private readonly TextBox search = new() { PlaceholderText = "Search clipboard history", Dock = DockStyle.Fill, BorderStyle = BorderStyle.FixedSingle };
-    private readonly FlowLayoutPanel cards = new() { Dock = DockStyle.Fill, AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.FromArgb(247, 248, 251) };
-    private readonly ComboBox filter = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 108 };
-    private readonly Label count = new() { AutoSize = true, ForeColor = Color.DimGray };
+    private readonly TextBox search = new() { PlaceholderText = "Search clipboard…", BorderStyle = BorderStyle.None };
+    private readonly FlowLayoutPanel cards = new() { AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false };
+    private readonly Panel header = new(), footer = new();
+    private readonly Label count = new() { TextAlign = ContentAlignment.MiddleLeft };
+    private readonly List<IconButton> filters = [];
+    private readonly IconButton previewButton, pauseButton, tackButton;
+    private readonly ToolTip tips = new();
     private readonly System.Windows.Forms.Timer slideTimer = new() { Interval = 15 };
     private Rectangle edgeArea;
-    private string panelSide = "Left";
-    private int slideStart;
-    private int slideEnd;
+    private string panelSide = "Left", filter = "all";
+    private string? selected;
+    private int slideStart, slideEnd, hotkey;
     private long slideStarted;
-    private bool closing;
-    private int hotkey;
+    private bool closing, searchVisible, refreshing;
+    private float ScaleFactor => DeviceDpi / 96f;
+    private int Px(float value) => (int)Math.Round(value * ScaleFactor);
+    public bool PanelPinned => history.Settings.PanelPinned;
     public event Action? HotkeyPressed;
+
     public MainWindow(History history, Action<ClipItem> restore, Action settings, Action quit)
     {
-        this.history = history; this.restore = restore; this.settings = settings; this.quit = quit;
+        this.history = history; this.restore = restore;
         Text = "ClipHat"; Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        Size = new Size(350, 690); MinimumSize = new Size(300, 430); StartPosition = FormStartPosition.Manual;
-        FormBorderStyle = FormBorderStyle.None; TopMost = true;
-        ShowInTaskbar = false; KeyPreview = true; BackColor = Color.White;
-        var title = new Label { Text = "ClipHat", Font = new Font("Segoe UI", 19, FontStyle.Bold), AutoSize = true, ForeColor = Color.FromArgb(34, 46, 64), Margin = new Padding(0, 0, 0, 10) };
-        var header = new TableLayoutPanel { Dock = DockStyle.Top, Height = 116, Padding = new Padding(16, 13, 16, 10), ColumnCount = 3, RowCount = 2 };
-        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        header.Controls.Add(title, 0, 0);
-        var menu = new Button { Text = "⚙", Width = 38, Height = 34, FlatStyle = FlatStyle.Flat, TabStop = false };
-        menu.FlatAppearance.BorderSize = 0; menu.Click += (_, _) => settings(); header.Controls.Add(menu, 1, 0);
-        var close = new Button { Text = "×", Width = 34, Height = 34, FlatStyle = FlatStyle.Flat, TabStop = false, Font = new Font("Segoe UI", 15) };
-        close.FlatAppearance.BorderSize = 0; close.Click += (_, _) => ClosePanel(); header.Controls.Add(close, 2, 0);
-        header.SetColumnSpan(search, 3); header.Controls.Add(search, 0, 1);
-        var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 45, Padding = new Padding(15, 6, 12, 4), WrapContents = false };
-        filter.Items.AddRange(["All", "Text", "Links", "Images", "Documents", "Audio"]); filter.SelectedIndex = 0;
-        toolbar.Controls.Add(filter);
-        var clear = new Button { Text = "Clear", Width = 60, Height = 25, FlatStyle = FlatStyle.Flat };
-        clear.Click += (_, _) => { if (MessageBox.Show("Delete all unpinned history?", "ClipHat", MessageBoxButtons.YesNo) == DialogResult.Yes) { history.Clear(false); RefreshItems(); } };
-        toolbar.Controls.Add(clear); toolbar.Controls.Add(count);
-        var footer = new Label { Dock = DockStyle.Bottom, Height = 34, Padding = new Padding(15, 7, 0, 0), Text = "Ctrl+Shift+V to open  •  Enter to copy  •  Esc to close", ForeColor = Color.DimGray, Font = new Font("Segoe UI", 8.5f) };
-        Controls.Add(cards); Controls.Add(footer); Controls.Add(toolbar); Controls.Add(header);
-        search.TextChanged += (_, _) => RefreshItems(); filter.SelectedIndexChanged += (_, _) => RefreshItems();
-        KeyDown += (_, e) => { if (e.KeyCode == Keys.Escape) ClosePanel(); if (e.Control && e.KeyCode == Keys.F) FocusSearch(); };
-        search.KeyDown += (_, e) => { if (e.KeyCode == Keys.Enter) { var first = VisibleItems().FirstOrDefault(); if (first != null) restore(first); e.SuppressKeyPress = true; } };
+        AutoScaleMode = AutoScaleMode.None;
+        Size = new Size(350, 690); StartPosition = FormStartPosition.Manual;
+        FormBorderStyle = FormBorderStyle.None; TopMost = true; ShowInTaskbar = false;
+        KeyPreview = true; DoubleBuffered = true; BackColor = Theme.Panel;
+        cards.BackColor = Theme.Panel;
+        search.Font = new Font("Segoe UI", 11); search.BackColor = Theme.Panel; search.Visible = false;
+        count.Font = new Font("Segoe UI", 9); count.ForeColor = Theme.Ink;
+        Controls.AddRange([cards, header, footer, search]);
+        AddButton(header, "search", "Search (Ctrl+F)", () => { searchVisible = !searchVisible; Arrange(); if (searchVisible) FocusSearch(); });
+        foreach (var (kind, label) in new[] { ("all", "All items"), ("text", "Text"), ("link", "Links"), ("image", "Images"), ("document", "Documents"), ("audio", "Audio") })
+        {
+            var button = AddButton(header, kind, label, () => { filter = kind; RefreshItems(); });
+            filters.Add(button);
+        }
+        footer.Controls.Add(count);
+        previewButton = AddButton(footer, "expand", "Large image and file previews", () => { history.Settings.LargePreviews = !history.Settings.LargePreviews; SaveAndRefresh(); });
+        pauseButton = AddButton(footer, "pause", "Pause clipboard capture", () => { history.Settings.Paused = !history.Settings.Paused; SaveAndRefresh(); });
+        tackButton = AddButton(footer, "pin", "Keep panel open", TogglePanelPin);
+        AddButton(footer, "gear", "Settings", () => { ClosePanel(); settings(); });
+        search.TextChanged += (_, _) => RefreshItems();
         cards.Resize += (_, _) => ResizeCards();
         slideTimer.Tick += (_, _) => AdvanceSlide();
-        Deactivate += (_, _) => { if (Visible && !closing) BeginInvoke(() => { if (!ContainsFocus) ClosePanel(); }); };
-        RefreshItems();
+        Deactivate += (_, _) => { if (Visible && !closing) BeginInvoke(() => { if (!ContainsFocus && !PanelPinned) ClosePanel(); }); };
+        Resize += (_, _) => Arrange();
+        DpiChanged += (_, _) => { Arrange(); RefreshItems(); };
+        Arrange(); RefreshItems();
     }
+    private IconButton AddButton(Control parent, string icon, string label, Action action)
+    {
+        var button = new IconButton(icon) { AccessibleName = label, AccessibleRole = AccessibleRole.PushButton };
+        button.Click += (_, _) => action(); tips.SetToolTip(button, label); parent.Controls.Add(button); return button;
+    }
+    private void Arrange()
+    {
+        var s = ScaleFactor;
+        header.SetBounds(Px(12), Px(5), Width - Px(24), Px(34));
+        for (var i = 0; i < header.Controls.Count; i++) header.Controls[i].SetBounds(i * header.Width / 7, 0, header.Width / 7 - Px(2), Px(32));
+        search.Visible = searchVisible;
+        search.SetBounds(Px(20), Px(47), Width - Px(40), Px(25));
+        var top = Px(searchVisible ? 80 : 44);
+        footer.SetBounds(0, Height - Px(39), Width, Px(39));
+        count.SetBounds(Px(16), 0, Math.Max(0, Width - Px(176)), Px(39));
+        for (var i = 1; i < footer.Controls.Count; i++) footer.Controls[i].SetBounds(Width - Px(152) + (i - 1) * Px(34), Px(3), Px(32), Px(32));
+        cards.SetBounds(0, top, Width, Math.Max(0, footer.Top - top));
+        var old = Region;
+        if (Width > 0 && Height > 0) { using var shape = Theme.Rounded(new RectangleF(0, 0, Width, Height), Px(17)); Region = new Region(shape); old?.Dispose(); }
+        ResizeCards(); Invalidate();
+    }
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e); using var pen = new Pen(Color.FromArgb(181, 202, 218));
+        e.Graphics.DrawLine(pen, 0, cards.Top - 1, Width, cards.Top - 1);
+        e.Graphics.DrawLine(pen, 0, footer.Top, Width, footer.Top);
+    }
+    public void TogglePanelPin() { history.Settings.PanelPinned = !PanelPinned; SaveAndRefresh(); }
+    private void SaveAndRefresh() { history.Save(); RefreshItems(); }
     public void OpenPanel(Screen screen, string side)
     {
-        slideTimer.Stop(); closing = false;
-        edgeArea = screen.WorkingArea;
+        slideTimer.Stop(); closing = false; edgeArea = screen.WorkingArea;
         panelSide = side == "Right" ? "Right" : "Left";
-        var width = Math.Clamp((int)(edgeArea.Width * .19), 300, 350);
+        var width = Math.Min(edgeArea.Width, Px(350));
         Bounds = new Rectangle(OffscreenX(width), edgeArea.Top, width, edgeArea.Height);
-        slideStart = Left; slideEnd = EdgeX(); slideStarted = Environment.TickCount64;
-        Show(); Activate(); FocusSearch(); slideTimer.Start();
+        RefreshItems();
+        slideStart = Left; slideEnd = panelSide == "Right" ? edgeArea.Right - Width : edgeArea.Left; slideStarted = Environment.TickCount64;
+        Show(); Activate(); if (searchVisible) search.Focus(); else Focus(); slideTimer.Start();
     }
     public void ClosePanel()
     {
         if (!Visible || closing) return;
-        closing = true; slideTimer.Stop();
-        slideStart = Left; slideEnd = OffscreenX(Width); slideStarted = Environment.TickCount64;
-        slideTimer.Start();
+        closing = true; slideTimer.Stop(); slideStart = Left; slideEnd = OffscreenX(Width); slideStarted = Environment.TickCount64; slideTimer.Start();
     }
-    private int EdgeX() => panelSide == "Right" ? edgeArea.Right - Width : edgeArea.Left;
     private int OffscreenX(int width) => panelSide == "Right" ? edgeArea.Right : edgeArea.Left - width;
     private void AdvanceSlide()
     {
-        var duration = closing ? 180.0 : 220.0;
-        var progress = Math.Clamp((Environment.TickCount64 - slideStarted) / duration, 0, 1);
+        var progress = Math.Clamp((Environment.TickCount64 - slideStarted) / (closing ? 180.0 : 220.0), 0, 1);
         var eased = closing ? progress * progress : 1 - Math.Pow(1 - progress, 3);
         Left = slideStart + (int)Math.Round((slideEnd - slideStart) * eased);
         if (progress < 1) return;
-        slideTimer.Stop(); Left = slideEnd;
-        if (closing) Hide();
+        slideTimer.Stop(); Left = slideEnd; if (closing) Hide();
     }
-    public void FocusSearch() { search.Focus(); search.SelectAll(); }
+    public void FocusSearch() { searchVisible = true; Arrange(); search.Focus(); search.SelectAll(); }
     public void EnsureHotkey(int id) { hotkey = id; Native.RegisterHotKey(Handle, id, 0x0002 | 0x0004, (uint)Keys.V); }
     public void ReleaseHotkey(int id) { Native.UnregisterHotKey(Handle, id); }
     protected override void WndProc(ref Message m) { if (m.Msg == 0x0312 && m.WParam.ToInt32() == hotkey) HotkeyPressed?.Invoke(); base.WndProc(ref m); }
-    private IEnumerable<ClipItem> VisibleItems() => history.Items.Where(x => (filter.SelectedIndex <= 0 || x.Kind == new[] { "", "text", "link", "image", "document", "audio" }[filter.SelectedIndex]) && (search.Text.Length == 0 || x.Text.Contains(search.Text, StringComparison.CurrentCultureIgnoreCase) || (x.FileName?.Contains(search.Text, StringComparison.CurrentCultureIgnoreCase) ?? false)));
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == Keys.Escape) { ClosePanel(); return true; }
+        if (keyData == (Keys.Control | Keys.F)) { FocusSearch(); return true; }
+        var items = VisibleItems().ToArray();
+        if (keyData == Keys.Down || keyData == Keys.Up)
+        {
+            if (items.Length == 0) return true;
+            var index = Array.FindIndex(items, x => x.Id == selected);
+            selected = items[Math.Clamp(index + (keyData == Keys.Down ? 1 : -1), 0, items.Length - 1)].Id;
+            foreach (var card in cards.Controls.OfType<HistoryCard>()) { card.Selected = card.Item.Id == selected; if (card.Selected) cards.ScrollControlIntoView(card); }
+            return true;
+        }
+        var current = items.FirstOrDefault(x => x.Id == selected);
+        if (keyData == Keys.Enter && current != null) { restore(current); return true; }
+        if (keyData == (Keys.Control | Keys.Delete) && current != null) { history.Remove(current); RefreshItems(); return true; }
+        return base.ProcessCmdKey(ref msg, keyData);
+    }
+    private IEnumerable<ClipItem> VisibleItems() => history.Items.Where(x => (filter == "all" || x.Kind == filter) && (search.Text.Length == 0 || x.Text.Contains(search.Text, StringComparison.CurrentCultureIgnoreCase) || (x.FileName?.Contains(search.Text, StringComparison.CurrentCultureIgnoreCase) ?? false)));
     public void RefreshItems()
     {
-        if (IsDisposed) return;
-        cards.SuspendLayout(); cards.Controls.Clear();
+        if (IsDisposed || refreshing) return;
+        refreshing = true; cards.SuspendLayout();
+        var scroll = cards.AutoScrollPosition;
+        foreach (Control control in cards.Controls.Cast<Control>().ToArray()) control.Dispose();
         var items = VisibleItems().ToArray();
+        if (!items.Any(x => x.Id == selected)) selected = items.FirstOrDefault()?.Id;
+        DateTime? lastDate = null;
         foreach (var item in items)
         {
-            var card = new Panel { Width = Math.Max(290, cards.ClientSize.Width - 30), Height = item.Kind == "image" ? 130 : 89, BackColor = Color.White, Margin = new Padding(9, 5, 9, 5), BorderStyle = BorderStyle.FixedSingle, Cursor = Cursors.Hand };
-            var kind = new Label { Text = item.Kind.ToUpperInvariant() + "  ·  " + item.CopiedAt.ToLocalTime().ToString("g"), Location = new Point(12, 8), Width = card.Width - 85, Height = 18, ForeColor = Color.SteelBlue, Font = new Font("Segoe UI", 8, FontStyle.Bold) };
-            var preview = new Label { Text = item.FileName ?? item.Text, Location = new Point(12, 29), Size = new Size(card.Width - 65, item.Kind == "image" ? 88 : 48), AutoEllipsis = true, Font = new Font("Segoe UI", 10), ForeColor = Color.FromArgb(30, 38, 50) };
-            if (item.Kind == "image" && item.Payload != null && File.Exists(item.Payload))
+            var date = item.CopiedAt.ToLocalTime().Date;
+            if (date != lastDate)
             {
-                try { using var img = Image.FromFile(item.Payload); var bitmap = new Bitmap(img); var pic = new PictureBox { Image = bitmap, SizeMode = PictureBoxSizeMode.Zoom, Location = new Point(12, 29), Size = new Size(card.Width - 65, 88) }; card.Controls.Add(pic); pic.Click += (_, _) => restore(item); pic.Disposed += (_, _) => bitmap.Dispose(); }
-                catch (IOException) { card.Controls.Add(preview); }
+                var title = date == DateTime.Today ? "Today" : date == DateTime.Today.AddDays(-1) ? "Yesterday" : date.ToString("MMMM d");
+                cards.Controls.Add(new Label { Text = title, Font = new Font("Segoe UI", 9, FontStyle.Bold), ForeColor = Theme.Muted, TextAlign = ContentAlignment.MiddleLeft, Height = Px(35), Margin = new Padding(Px(22), Px(4), 0, 0) });
+                lastDate = date;
             }
-            else card.Controls.Add(preview);
-            var pin = new Button { Text = item.Pinned ? "★" : "☆", Location = new Point(card.Width - 47, 5), Size = new Size(28, 25), FlatStyle = FlatStyle.Flat, ForeColor = Color.DarkGoldenrod };
-            pin.FlatAppearance.BorderSize = 0; pin.Click += (_, _) => { item.Pinned = !item.Pinned; history.Save(); RefreshItems(); };
-            var context = new ContextMenuStrip();
-            context.Items.Add("Copy", null, (_, _) => restore(item));
-            if (item.Kind == "link") context.Items.Add("Open link", null, (_, _) => { try { Process.Start(new ProcessStartInfo(item.Text) { UseShellExecute = true }); } catch (Exception) { } });
-            context.Items.Add(item.Pinned ? "Unpin" : "Pin", null, (_, _) => { item.Pinned = !item.Pinned; history.Save(); RefreshItems(); });
-            context.Items.Add("Delete", null, (_, _) => { history.Remove(item); RefreshItems(); });
-            card.ContextMenuStrip = context;
-            card.Controls.Add(kind); card.Controls.Add(pin);
-            card.Click += (_, _) => restore(item); kind.Click += (_, _) => restore(item); preview.Click += (_, _) => restore(item);
+            var card = new HistoryCard(item, history.Settings.LargePreviews) { Selected = item.Id == selected, Margin = new Padding(Px(11), Px(5), Px(11), Px(5)) };
+            card.Restore += () => restore(item);
+            card.Delete += () => { history.Remove(item); RefreshItems(); };
+            card.Pin += () => { item.Pinned = !item.Pinned; SaveAndRefresh(); };
+            tips.SetToolTip(card, item.FileName != null ? item.Text : "Click to copy • Right-click for more options");
             cards.Controls.Add(card);
         }
-        count.Text = $"  {items.Length} items" + (history.Settings.Paused ? " · Paused" : "");
-        cards.ResumeLayout();
+        if (items.Length == 0) cards.Controls.Add(new Label { Text = search.Text.Length == 0 ? "Never lose something you copied.\n\nCopy text, a link, an image, or a file to begin." : "No matching items", ForeColor = Theme.Muted, Font = new Font("Segoe UI", 10), Height = Px(150), TextAlign = ContentAlignment.MiddleCenter, Margin = new Padding(Px(15)) });
+        count.Text = $"{items.Length} item{(items.Length == 1 ? "" : "s")}";
+        foreach (var button in filters) button.Active = button.IconName == filter;
+        previewButton.Active = history.Settings.LargePreviews;
+        pauseButton.IconName = history.Settings.Paused ? "play" : "pause"; pauseButton.Active = history.Settings.Paused;
+        tackButton.Active = PanelPinned;
+        tips.SetToolTip(tackButton, PanelPinned ? "Unpin panel — allow auto-close" : "Keep panel open");
+        tips.SetToolTip(pauseButton, history.Settings.Paused ? "Resume clipboard capture" : "Pause clipboard capture");
+        ResizeCards(); cards.ResumeLayout(); cards.AutoScrollPosition = new Point(-scroll.X, -scroll.Y); refreshing = false;
     }
-    private void ResizeCards() { foreach (Control control in cards.Controls) control.Width = Math.Max(290, cards.ClientSize.Width - 30); }
-}
-
-internal sealed class SettingsWindow : Form
-{
-    public SettingsWindow(History history)
+    private void ResizeCards()
     {
-        Text = "ClipHat Settings — 1.1.1"; Size = new Size(420, 390); StartPosition = FormStartPosition.CenterScreen; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; MinimizeBox = false;
-        var settings = history.Settings;
-        var layout = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(20), AutoScroll = true };
-        var limitLabel = new Label { Text = "Keep clipboard items", AutoSize = true, Font = new Font("Segoe UI", 10, FontStyle.Bold), Margin = new Padding(3, 0, 0, 4) };
-        var limit = new NumericUpDown { Minimum = 10, Maximum = 5000, Increment = 10, Value = Math.Clamp(settings.Limit, 10, 5000), Width = 140 };
-        limit.ValueChanged += (_, _) => { settings.Limit = (int)limit.Value; history.Trim(); };
-        layout.Controls.Add(limitLabel); layout.Controls.Add(limit);
-        var sideLabel = new Label { Text = "Panel side", AutoSize = true, Font = new Font("Segoe UI", 10, FontStyle.Bold), Margin = new Padding(3, 12, 0, 4) };
-        var side = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 140 };
-        side.Items.AddRange(["Left", "Right"]); side.SelectedItem = settings.PanelSide == "Right" ? "Right" : "Left";
-        side.SelectedIndexChanged += (_, _) => { settings.PanelSide = side.SelectedItem?.ToString() ?? "Left"; history.Save(); };
-        layout.Controls.Add(sideLabel); layout.Controls.Add(side);
-        AddToggle("Pause clipboard capture", settings.Paused, x => settings.Paused = x);
-        AddToggle("Capture text and links", settings.CaptureText, x => settings.CaptureText = x);
-        AddToggle("Capture images", settings.CaptureImages, x => settings.CaptureImages = x);
-        AddToggle("Capture files", settings.CaptureFiles, x => settings.CaptureFiles = x);
-        AddToggle("Launch at login", settings.LaunchAtLogin, x =>
-        {
-            try { using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true); if (x) key?.SetValue("ClipHat", '"' + Application.ExecutablePath + '"'); else key?.DeleteValue("ClipHat", false); settings.LaunchAtLogin = x; }
-            catch (Exception e) { MessageBox.Show(e.Message, "ClipHat", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
-        });
-        var clear = new Button { Text = "Clear all history, including pins", AutoSize = true, Margin = new Padding(3, 12, 0, 0) };
-        clear.Click += (_, _) => { if (MessageBox.Show("Permanently delete all clipboard history?", "ClipHat", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes) history.Clear(true); };
-        layout.Controls.Add(clear);
-        var note = new Label { Text = "History stays on this PC in Local AppData.\nShortcut: Ctrl+Shift+V", AutoSize = true, ForeColor = Color.DimGray, Margin = new Padding(3, 16, 0, 0) };
-        layout.Controls.Add(note);
-        Controls.Add(layout);
-        FormClosed += (_, _) => history.Save();
-        void AddToggle(string title, bool value, Action<bool> change)
-        {
-            var toggle = new CheckBox { Text = title, Checked = value, AutoSize = true, Margin = new Padding(3, 10, 0, 0) };
-            toggle.CheckedChanged += (_, _) => { change(toggle.Checked); history.Save(); };
-            layout.Controls.Add(toggle);
-        }
+        foreach (Control control in cards.Controls) control.Width = Math.Max(Px(180), cards.ClientSize.Width - Px(28) - SystemInformation.VerticalScrollBarWidth);
+    }
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) { slideTimer.Dispose(); tips.Dispose(); }
+        base.Dispose(disposing);
     }
 }
