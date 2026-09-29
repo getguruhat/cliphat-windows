@@ -39,4 +39,6 @@ dotnet run --project ClipHat.csproj
 
 GitHub Actions publishes a self-contained x64 build, packages it with Inno Setup, and attaches the installer to the [Windows release](https://github.com/getguruhat/cliphat-windows/releases/tag/v1.3.1-windows).
 
-The macOS version is available at [cliphat-macos](https://github.com/getguruhat/cliphat-macos).
+## Other platforms
+
+ClipHat for macOS is a separate native app. Download it from the [ClipHat for macOS releases](https://github.com/getguruhat/cliphat-macos/releases/latest).
