@@ -1,5 +1,5 @@
 #define AppName "ClipHat"
-#define AppVersion "1.5.1"
+#define AppVersion "1.5.2"
 [Setup]
 AppId={{E1A90BA8-26D8-47D3-85A6-7CC8C8652B4F}
 AppName={#AppName}
