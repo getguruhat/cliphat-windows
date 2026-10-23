@@ -134,13 +134,13 @@ internal sealed class ClipHatContext : ApplicationContext
         window = new MainWindow(history, Restore, OpenSettings, Quit);
         window.FormClosing += (_, e) => { if (e.CloseReason != CloseReason.ApplicationExitCall) { e.Cancel = true; window.ClosePanel(); } };
         window.HotkeyPressed += () => { if (window.Visible) window.ClosePanel(); else Show(); };
-        tray = new NotifyIcon { Icon = TrayIcon(), Text = "ClipHat — Ctrl+Shift+V", Visible = true };
+        tray = new NotifyIcon { Icon = TrayIcon(), Text = "ClipHat — " + Strings.Current.HistoryShortcut, Visible = true };
         tray.DoubleClick += (_, _) => Show();
         tray.ContextMenuStrip = new ContextMenuStrip();
-        tray.ContextMenuStrip.Items.Add("Open history", null, (_, _) => Show());
-        tray.ContextMenuStrip.Items.Add("Pause capture", null, (_, _) => TogglePause());
-        tray.ContextMenuStrip.Items.Add("Settings", null, (_, _) => OpenSettings());
-        tray.ContextMenuStrip.Items.Add("Quit", null, (_, _) => Quit());
+        tray.ContextMenuStrip.Items.Add(Strings.Current.OpenHistory, null, (_, _) => Show());
+        tray.ContextMenuStrip.Items.Add(Strings.Current.PauseCapture, null, (_, _) => TogglePause());
+        tray.ContextMenuStrip.Items.Add(Strings.Current.Settings, null, (_, _) => OpenSettings());
+        tray.ContextMenuStrip.Items.Add(Strings.Current.Quit, null, (_, _) => Quit());
         timer = new Timer { Interval = 750 };
         timer.Tick += (_, _) => Poll();
         sequence = Native.GetClipboardSequenceNumber();
@@ -197,7 +197,7 @@ internal sealed class ClipHatContext : ApplicationContext
                 {
                     using var stream = new MemoryStream();
                     image.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-                    if (stream.Length <= 10 * 1024 * 1024) { payload = stream.ToArray(); item = new ClipItem { Kind = "image", Text = $"Image {image.Width} × {image.Height}", FileName = "Image.png" }; }
+                    if (stream.Length <= 10 * 1024 * 1024) { payload = stream.ToArray(); item = new ClipItem { Kind = "image", Text = string.Format(Strings.Current.ImageCaption, image.Width, image.Height), FileName = "Image.png" }; }
                 }
             }
             else if (history.Settings.CaptureText && data.GetDataPresent(DataFormats.UnicodeText))

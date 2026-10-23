@@ -84,10 +84,11 @@ internal sealed class HistoryCard : Control
             try { using var img = Image.FromFile(item.Payload); originalSize = img.Size; thumbnail = new Bitmap(img, Fit(img.Size, new Size(600, 400)).Size); }
             catch (Exception e) when (e is IOException or ArgumentException or OutOfMemoryException) { }
         }
-        menu.Items.Add("Copy to clipboard", null, (_, _) => Restore?.Invoke());
-        menu.Items.Add(item.Pinned ? "Unpin item" : "Pin item", null, (_, _) => Pin?.Invoke());
-        if (item.Kind == "link") menu.Items.Add("Open link", null, (_, _) => { if (Uri.TryCreate(item.Text, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https") Process.Start(new ProcessStartInfo(item.Text) { UseShellExecute = true }); });
-        menu.Items.Add("Delete", null, (_, _) => Delete?.Invoke()); ContextMenuStrip = menu;
+        var t = Strings.Current;
+        menu.Items.Add(t.CopyToClipboard, null, (_, _) => Restore?.Invoke());
+        menu.Items.Add(item.Pinned ? t.UnpinItem : t.PinItem, null, (_, _) => Pin?.Invoke());
+        if (item.Kind == "link") menu.Items.Add(t.OpenLink, null, (_, _) => { if (Uri.TryCreate(item.Text, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https") Process.Start(new ProcessStartInfo(item.Text) { UseShellExecute = true }); });
+        menu.Items.Add(t.Delete, null, (_, _) => Delete?.Invoke()); ContextMenuStrip = menu;
     }
     protected override void OnDpiChangedAfterParent(EventArgs e)
     {
@@ -109,7 +110,7 @@ internal sealed class HistoryCard : Control
             var preview = new Rectangle((int)(15 * S), (int)(38 * S), (int)(Width - 30 * S), (int)(145 * S));
             if (thumbnail != null) DrawImage(g, thumbnail, preview);
             else Theme.Icon(g, Item.Kind, new RectangleF((Width - 60 * S) / 2, 75 * S, 60 * S, 60 * S), Theme.Muted);
-            DrawText(g, Item.FileName ?? "Image", new RectangleF(15 * S, 190 * S, Width - 30 * S, 21 * S), 11, Theme.Ink, true);
+            DrawText(g, Item.FileName ?? Strings.Current.Image, new RectangleF(15 * S, 190 * S, Width - 30 * S, 21 * S), 11, Theme.Ink, true);
             DrawText(g, Metadata(), new RectangleF(15 * S, 213 * S, Width - 30 * S, 19 * S), 10, Theme.Muted);
         }
         else
@@ -122,15 +123,16 @@ internal sealed class HistoryCard : Control
             }
             DrawText(g, (Item.FileName ?? Item.Text).Replace('\r', ' ').Replace('\n', ' '), new RectangleF(left, 39 * S, Width - left - 13 * S, 24 * S), 12, Theme.Ink, true);
             DrawText(g, Metadata(), new RectangleF(left, 65 * S, Width - left - 13 * S, 20 * S), 10.5f, Theme.Muted);
-            DrawText(g, Item.Source ?? "Clipboard", new RectangleF(left, 86 * S, Width - left - 13 * S, 19 * S), 10, Theme.Muted);
+            DrawText(g, Item.Source ?? Strings.Current.Clipboard, new RectangleF(left, 86 * S, Width - left - 13 * S, 19 * S), 10, Theme.Muted);
         }
     }
     private string Metadata()
     {
-        if (Item.Kind == "text") return $"Text · {Item.Text.Length:N0} characters";
-        if (Item.Kind == "link") return Uri.TryCreate(Item.Text, UriKind.Absolute, out var uri) ? uri.Host : "Link";
+        var t = Strings.Current;
+        if (Item.Kind == "text") return string.Format(t.TextMeta, Item.Text.Length.ToString("N0"));
+        if (Item.Kind == "link") return Uri.TryCreate(Item.Text, UriKind.Absolute, out var uri) ? uri.Host : t.Link;
         var ext = Path.GetExtension(Item.FileName ?? "").TrimStart('.').ToUpperInvariant();
-        return thumbnail != null ? $"{originalSize.Width} × {originalSize.Height} · {ext}" : (ext.Length > 0 ? ext + " file" : Item.Kind);
+        return thumbnail != null ? $"{originalSize.Width} × {originalSize.Height} · {ext}" : (ext.Length > 0 ? string.Format(t.FileOfType, ext) : Item.Kind);
     }
     private static void DrawText(Graphics g, string text, RectangleF rect, float size, Color color, bool bold = false, StringAlignment align = StringAlignment.Near)
     {

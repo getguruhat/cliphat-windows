@@ -38,19 +38,20 @@ internal sealed class MainWindow : Form
         search.Font = new Font("Segoe UI", 11); search.BackColor = Theme.Panel; search.Visible = false;
         count.Font = new Font("Segoe UI", 9); count.ForeColor = Theme.Ink;
         Controls.AddRange([cards, header, footer, search]);
-        AddButton(header, "search", "Search (Ctrl+F)", () => { searchVisible = !searchVisible; Arrange(); if (searchVisible) FocusSearch(); });
-        foreach (var (kind, label) in new[] { ("all", "All items"), ("text", "Text"), ("link", "Links"), ("image", "Images"), ("document", "Documents"), ("audio", "Audio") })
+        var t = Strings.Current;
+        AddButton(header, "search", string.Format(t.SearchTip, t.CtrlPlus("F")), () => { searchVisible = !searchVisible; Arrange(); if (searchVisible) FocusSearch(); });
+        foreach (var (kind, label) in new[] { ("all", t.AllItems), ("text", t.Text), ("link", t.Links), ("image", t.Images), ("document", t.Documents), ("audio", t.Audio) })
         {
             var button = AddButton(header, kind, label, () => { filter = kind; RefreshItems(); });
             filters.Add(button);
         }
         footer.Controls.Add(count);
-        previewButton = AddButton(footer, "expand", "Large image and file previews", () => { history.Settings.LargePreviews = !history.Settings.LargePreviews; SaveAndRefresh(); });
-        pauseButton = AddButton(footer, "pause", "Pause clipboard capture", () => { history.Settings.Paused = !history.Settings.Paused; SaveAndRefresh(); });
-        tackButton = AddButton(footer, "pin", "Keep panel open", TogglePanelPin);
-        AddButton(footer, "gear", "Settings", () => { ClosePanel(); settings(); });
+        previewButton = AddButton(footer, "expand", t.LargePreviews, () => { history.Settings.LargePreviews = !history.Settings.LargePreviews; SaveAndRefresh(); });
+        pauseButton = AddButton(footer, "pause", t.PauseCaptureTip, () => { history.Settings.Paused = !history.Settings.Paused; SaveAndRefresh(); });
+        tackButton = AddButton(footer, "pin", t.KeepPanelOpen, TogglePanelPin);
+        AddButton(footer, "gear", t.Settings, () => { ClosePanel(); settings(); });
         // EM_SETCUEBANNER: the placeholder text (TextBox.PlaceholderText is .NET Core only), shown even while focused.
-        search.HandleCreated += (_, _) => Native.SendMessage(search.Handle, 0x1501, (IntPtr)1, "Search clipboard…");
+        search.HandleCreated += (_, _) => Native.SendMessage(search.Handle, 0x1501, (IntPtr)1, t.SearchPlaceholder);
         search.TextChanged += (_, _) => RefreshItems();
         cards.Resize += (_, _) => ResizeCards();
         slideTimer.Tick += (_, _) => AdvanceSlide();
@@ -138,6 +139,7 @@ internal sealed class MainWindow : Form
     public void RefreshItems()
     {
         if (IsDisposed || refreshing) return;
+        var t = Strings.Current;
         refreshing = true; cards.SuspendLayout();
         var scroll = cards.AutoScrollPosition;
         foreach (Control control in cards.Controls.Cast<Control>().ToArray()) control.Dispose();
@@ -149,7 +151,7 @@ internal sealed class MainWindow : Form
             var date = item.CopiedAt.ToLocalTime().Date;
             if (date != lastDate)
             {
-                var title = date == DateTime.Today ? "Today" : date == DateTime.Today.AddDays(-1) ? "Yesterday" : date.ToString("MMMM d");
+                var title = date == DateTime.Today ? t.Today : date == DateTime.Today.AddDays(-1) ? t.Yesterday : t.DayName(date);
                 cards.Controls.Add(new Label { Text = title, Font = new Font("Segoe UI", 9, FontStyle.Bold), ForeColor = Theme.Muted, TextAlign = ContentAlignment.MiddleLeft, Height = Px(35), Margin = new Padding(Px(22), Px(4), 0, 0) });
                 lastDate = date;
             }
@@ -162,17 +164,17 @@ internal sealed class MainWindow : Form
             };
             card.Delete += () => { history.Remove(item); RefreshItems(); };
             card.Pin += () => { item.Pinned = !item.Pinned; SaveAndRefresh(); };
-            tips.SetToolTip(card, item.FileName != null ? item.Text : "Click to copy • Right-click for more options");
+            tips.SetToolTip(card, item.FileName != null ? item.Text : t.CardTip);
             cards.Controls.Add(card);
         }
-        if (items.Length == 0) cards.Controls.Add(new Label { Text = search.Text.Length == 0 ? "Never lose something you copied.\n\nCopy text, a link, an image, or a file to begin." : "No matching items", ForeColor = Theme.Muted, Font = new Font("Segoe UI", 10), Height = Px(150), TextAlign = ContentAlignment.MiddleCenter, Margin = new Padding(Px(15)) });
-        count.Text = $"{items.Length} item{(items.Length == 1 ? "" : "s")}";
+        if (items.Length == 0) cards.Controls.Add(new Label { Text = search.Text.Length == 0 ? t.Tagline + "\n\n" + t.EmptyHint : t.NoMatches, ForeColor = Theme.Muted, Font = new Font("Segoe UI", 10), Height = Px(150), TextAlign = ContentAlignment.MiddleCenter, Margin = new Padding(Px(15)) });
+        count.Text = t.ItemCount(items.Length);
         foreach (var button in filters) button.Active = button.IconName == filter;
         previewButton.Active = history.Settings.LargePreviews;
         pauseButton.IconName = history.Settings.Paused ? "play" : "pause"; pauseButton.Active = history.Settings.Paused;
         tackButton.Active = PanelPinned;
-        tips.SetToolTip(tackButton, PanelPinned ? "Unpin panel — allow auto-close" : "Keep panel open");
-        tips.SetToolTip(pauseButton, history.Settings.Paused ? "Resume clipboard capture" : "Pause clipboard capture");
+        tips.SetToolTip(tackButton, PanelPinned ? t.UnpinPanel : t.KeepPanelOpen);
+        tips.SetToolTip(pauseButton, history.Settings.Paused ? t.ResumeCaptureTip : t.PauseCaptureTip);
         ResizeCards(); cards.ResumeLayout(); cards.AutoScrollPosition = new Point(-scroll.X, -scroll.Y); refreshing = false;
     }
     private void ResizeCards()

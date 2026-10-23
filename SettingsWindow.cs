@@ -16,14 +16,15 @@ internal sealed class SettingsWindow : Form
         SuspendLayout();
         AutoScaleDimensions = new SizeF(96, 96);
         AutoScaleMode = AutoScaleMode.Dpi;
-        Text = "ClipHat Settings"; ClientSize = new Size(660, 580); Font = new Font("Segoe UI", 10);
+        Text = Strings.Current.SettingsTitle; ClientSize = new Size(660, 580); Font = new Font("Segoe UI", 10);
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; MinimizeBox = false;
         BackColor = Color.FromArgb(244, 245, 247); Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        var nav = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 78, Padding = new Padding(110, 18, 0, 14), WrapContents = false };
-        foreach (var name in new[] { "General", "History", "Privacy", "About" })
+        var nav = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 78, Padding = new Padding(70, 18, 0, 14), WrapContents = false };
+        var labels = new Dictionary<string, string> { ["General"] = Strings.Current.TabGeneral, ["History"] = Strings.Current.TabHistory, ["Privacy"] = Strings.Current.TabPrivacy, ["About"] = Strings.Current.TabAbout };
+        foreach (var name in labels.Keys)
         {
-            var button = new Button { Text = name, Width = 110, Height = 40, FlatStyle = FlatStyle.Flat, Margin = new Padding(0), TabStop = true };
+            var button = new Button { Text = labels[name], Tag = name, Width = 130, Height = 40, FlatStyle = FlatStyle.Flat, Margin = new Padding(0), TabStop = true };
             button.FlatAppearance.BorderSize = 0; button.Click += (_, _) => SelectPage(name); tabs.Add(button); nav.Controls.Add(button);
         }
         var surround = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20, 0, 20, 20) };
@@ -38,81 +39,82 @@ internal sealed class SettingsWindow : Form
     {
         currentPage = name;
         content.SuspendLayout();
-        foreach (var tab in tabs) { tab.BackColor = tab.Text == name ? Color.White : BackColor; tab.ForeColor = tab.Text == name ? Theme.Blue : Theme.Ink; }
+        foreach (var tab in tabs) { tab.BackColor = (string)tab.Tag == name ? Color.White : BackColor; tab.ForeColor = (string)tab.Tag == name ? Theme.Blue : Theme.Ink; }
         foreach (Control control in content.Controls.Cast<Control>().ToArray()) control.Dispose();
         var page = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, BackColor = Color.White };
         page.SuspendLayout();
         var settings = history.Settings;
+        var t = Strings.Current;
         switch (name)
         {
             case "General":
-                Toggle(page, "Launch ClipHat at login", Startup.Enabled, value =>
+                Toggle(page, t.LaunchAtLogin, Startup.Enabled, value =>
                 {
                     Startup.Enabled = value;
                     settings.LaunchAtLogin = Startup.Enabled;
                     // Windows can refuse (the Store version's startup task); show what it actually is.
                     if (settings.LaunchAtLogin != value) BeginInvoke(new Action(() => SelectPage("General")));
                 });
-                Row(page, "Keyboard shortcut", new Label { Text = "Ctrl + Shift + V", AutoSize = true, ForeColor = Theme.Muted });
-                Toggle(page, "Large image and document previews (2× cards)", settings.LargePreviews, x => settings.LargePreviews = x);
-                Toggle(page, "Keep panel open (thumbtack)", settings.PanelPinned, x => settings.PanelPinned = x);
+                Row(page, t.KeyboardShortcut, new Label { Text = t.HistoryShortcut.Replace("+", " + "), AutoSize = true, ForeColor = Theme.Muted });
+                Toggle(page, t.LargePreviewsSetting, settings.LargePreviews, x => settings.LargePreviews = x);
+                Toggle(page, t.KeepOpenSetting, settings.PanelPinned, x => settings.PanelPinned = x);
                 var positions = new FlowLayoutPanel { AutoSize = true, WrapContents = false };
                 foreach (var side in new[] { "Left", "Right" })
                 {
-                    var option = new RadioButton { Text = side, Appearance = Appearance.Button, TextAlign = ContentAlignment.MiddleCenter, AutoSize = true, FlatStyle = FlatStyle.Flat, Checked = settings.PanelSide == side, Margin = new Padding(0, 0, 8, 0) };
+                    var option = new RadioButton { Text = side == "Left" ? t.Left : t.Right, Appearance = Appearance.Button, TextAlign = ContentAlignment.MiddleCenter, AutoSize = true, FlatStyle = FlatStyle.Flat, Checked = settings.PanelSide == side, Margin = new Padding(0, 0, 8, 0) };
                     option.CheckedChanged += (_, _) => { if (option.Checked) { settings.PanelSide = side; history.Save(); } }; positions.Controls.Add(option);
                 }
-                Row(page, "Panel position", positions);
-                Note(page, "Select an item to copy it, then press Ctrl+V to paste.");
+                Row(page, t.PanelPosition, positions);
+                Note(page, string.Format(t.CopyHint, t.CtrlPlus("V")));
                 Divider(page);
-                var exit = ActionButton("Quit ClipHat", () => { Close(); quit?.Invoke(); }); exit.ForeColor = Color.Firebrick; page.Controls.Add(exit);
+                var exit = ActionButton(t.QuitClipHat, () => { Close(); quit?.Invoke(); }); exit.ForeColor = Color.Firebrick; page.Controls.Add(exit);
                 break;
             case "History":
                 var limit = new NumericUpDown { Minimum = 10, Maximum = 5000, Increment = 10, Value = Compat.Clamp(settings.Limit, 10, 5000), Width = 92 };
                 limit.ValueChanged += (_, _) => { settings.Limit = (int)limit.Value; history.Trim(); };
-                Row(page, "Keep clipboard items", limit);
-                Note(page, "Oldest unpinned items are removed first. Pinned items are always kept.");
-                Heading(page, "Store");
-                Toggle(page, "Text and links", settings.CaptureText, x => settings.CaptureText = x);
-                Toggle(page, "Images", settings.CaptureImages, x => settings.CaptureImages = x);
-                Toggle(page, "Documents and other files", settings.CaptureFiles, x => settings.CaptureFiles = x);
-                Toggle(page, "Pause clipboard capture", settings.Paused, x => settings.Paused = x);
-                Note(page, "Up to 1 MB per text item, 10 MB per image, and 20 MB per file. Folders are not supported.");
+                Row(page, t.KeepItems, limit);
+                Note(page, t.KeepItemsNote);
+                Heading(page, t.SaveHeading);
+                Toggle(page, t.TextAndLinks, settings.CaptureText, x => settings.CaptureText = x);
+                Toggle(page, t.Images, settings.CaptureImages, x => settings.CaptureImages = x);
+                Toggle(page, t.DocumentsAndFiles, settings.CaptureFiles, x => settings.CaptureFiles = x);
+                Toggle(page, t.PauseCaptureTip, settings.Paused, x => settings.Paused = x);
+                Note(page, t.SizeLimits);
                 Divider(page);
                 var clearRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false };
-                clearRow.Controls.Add(ActionButton("Clear Unpinned History", () => { if (Confirm("Delete all unpinned clipboard history?")) history.Clear(false); }));
-                clearRow.Controls.Add(ActionButton("Clear All History…", () => { if (Confirm("Permanently delete all history, including pinned items?")) history.Clear(true); }));
+                clearRow.Controls.Add(ActionButton(t.ClearUnpinned, () => { if (Confirm(t.ClearUnpinnedConfirm)) history.Clear(false); }));
+                clearRow.Controls.Add(ActionButton(t.ClearAll, () => { if (Confirm(t.ClearAllConfirm)) history.Clear(true); }));
                 page.Controls.Add(clearRow);
                 break;
             case "Privacy":
-                Heading(page, "Ignored Apps");
-                Note(page, "Clipboard activity from these applications is not saved.");
+                Heading(page, t.IgnoredApps);
+                Note(page, t.IgnoredAppsNote);
                 var apps = new ListBox { Width = 550, Height = 136, BorderStyle = BorderStyle.FixedSingle, Font = Font };
                 void Reload() { apps.Items.Clear(); foreach (var app in settings.IgnoredApps.OrderBy(x => x)) apps.Items.Add(app); }
                 Reload(); page.Controls.Add(apps);
                 var actions = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 10, 0, 8) };
-                actions.Controls.Add(ActionButton("Add Application…", () =>
+                actions.Controls.Add(ActionButton(t.AddApplication, () =>
                 {
-                    using var dialog = new OpenFileDialog { Title = "Ignore clipboard from an application", Filter = "Applications (*.exe)|*.exe" };
+                    using var dialog = new OpenFileDialog { Title = t.IgnoreDialogTitle, Filter = t.ApplicationsFilter };
                     if (dialog.ShowDialog(this) == DialogResult.OK) { var app = Path.GetFileNameWithoutExtension(dialog.FileName); if (!settings.IgnoredApps.Contains(app, StringComparer.OrdinalIgnoreCase)) settings.IgnoredApps.Add(app); history.Save(); Reload(); }
                 }));
-                actions.Controls.Add(ActionButton("Remove", () => { if (apps.SelectedItem is string app) { settings.IgnoredApps.Remove(app); history.Save(); Reload(); } }));
+                actions.Controls.Add(ActionButton(t.Remove, () => { if (apps.SelectedItem is string app) { settings.IgnoredApps.Remove(app); history.Save(); Reload(); } }));
                 page.Controls.Add(actions);
-                Note(page, "Everything stays on this PC. Sensitive clipboard markers are skipped. Apps may omit these markers; add any application you want excluded.");
-                Note(page, "History is stored locally in Local AppData. Exclusions apply to future captures; clear existing history separately.");
+                Note(page, t.PrivacyNote);
+                Note(page, t.StorageNote);
                 break;
             case "About":
                 page.FlowDirection = FlowDirection.TopDown;
-                var picture = new PictureBox { Width = 550, Height = 102, SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(0, 12, 0, 10), AccessibleName = "ClipHat app icon" };
+                var picture = new PictureBox { Width = 550, Height = 102, SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(0, 12, 0, 10), AccessibleName = t.AppIconName };
                 using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ClipHat.AppIcon.png") ?? throw new InvalidOperationException("ClipHat icon is missing."))
                 using (var image = Image.FromStream(stream)) picture.Image = new Bitmap(image);
                 picture.Disposed += (_, _) => picture.Image?.Dispose(); page.Controls.Add(picture);
                 Center(page, "ClipHat", 22, true, Theme.Ink);
-                Center(page, "Never lose something you copied.", 11, false, Theme.Ink);
+                Center(page, t.Tagline, 11, false, Theme.Ink);
                 var version = Assembly.GetExecutingAssembly().GetName().Version;
-                Center(page, $"Version {version?.ToString(3)} · Part of GuruHat", 10, false, Theme.Muted);
-                Center(page, "Free & Open Source · MIT License", 9, false, Theme.Muted);
-                Center(page, "No accounts. No cloud. No analytics.", 9, false, Theme.Muted);
+                Center(page, string.Format(t.VersionLine, version?.ToString(3)), 10, false, Theme.Muted);
+                Center(page, t.License, 9, false, Theme.Muted);
+                Center(page, t.NoTracking, 9, false, Theme.Muted);
                 break;
         }
         // Pages are created after the form has already scaled; scale new controls

@@ -43,7 +43,7 @@ internal static class Startup
                 var state = Task.Run(async () => await task.RequestEnableAsync()).GetAwaiter().GetResult();
                 // Once the user turns ClipHat off in Windows' own startup settings, only they can turn it back on.
                 if (state == StartupTaskState.DisabledByUser)
-                    MessageBox.Show("ClipHat was turned off in Windows startup settings. To start it at login again, turn it on in Settings › Apps › Startup.", "ClipHat");
+                    MessageBox.Show(Strings.Current.StartupBlocked, "ClipHat");
                 return;
             }
             using var key = Registry.CurrentUser.CreateSubKey(RunKey);

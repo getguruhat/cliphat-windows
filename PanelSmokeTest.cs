@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ClipHat;
 
 internal static class PanelSmokeTest
@@ -47,8 +49,44 @@ internal static class PanelSmokeTest
             panel.Activate(); Pump(100);
             panel.TogglePanelPin(); other.Show(); other.Activate(); Pump(400);
             if (panel.Visible) throw new InvalidOperationException("Unpinned panel did not dismiss when another app was activated.");
+            CheckStrings();
+            // German has the longest text and Japanese needs font fallback; save both for a look.
+            foreach (var culture in new[] { "de-DE", "ja-JP" })
+            {
+                Strings.Use(new CultureInfo(culture));
+                using (var localized = new MainWindow(history, _ => { }, () => { }, () => { }))
+                {
+                    localized.OpenPanel(screen, "Left"); Pump(400);
+                    Capture(localized, $"screenshots/panel-{culture}.png");
+                }
+                using var settings = new SettingsWindow(history);
+                settings.Show(); Pump(150);
+                foreach (var page in new[] { "General", "History", "Privacy", "About" })
+                {
+                    settings.SelectPage(page); Pump(100); Capture(settings, $"screenshots/settings-{page.ToLowerInvariant()}-{culture}.png");
+                }
+                settings.Close();
+            }
+            Strings.Use(new CultureInfo("en-US"));
         }
         finally { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
+    }
+    /// Every translation is picked by its culture, has no empty text, and its templates format.
+    private static void CheckStrings()
+    {
+        foreach (var name in new[] { "es-ES", "de-DE", "fr-FR", "pt-BR", "ja-JP", "zh-CN", "ko-KR" })
+        {
+            var strings = Strings.For(new CultureInfo(name));
+            var values = typeof(Strings).GetProperties().Where(p => p.PropertyType == typeof(string)).Select(p => (string)p.GetValue(strings)!).ToList();
+            foreach (var value in values) _ = string.Format(value, "x", "y");
+            _ = strings.DayName(DateTime.Today);
+            if (strings.OpenHistory == "Open history" || values.Any(v => v.Length == 0))
+                throw new InvalidOperationException($"The {name} translation is missing.");
+        }
+        if (Strings.For(new CultureInfo("zh-TW")).OpenHistory != "Open history")
+            throw new InvalidOperationException("Traditional Chinese did not fall back to English.");
+        if (Strings.For(new CultureInfo("de-AT")).HistoryShortcut != "Strg+Umschalt+V")
+            throw new InvalidOperationException("Regional German did not use German.");
     }
     private static void Capture(Form form, string path)
     {
