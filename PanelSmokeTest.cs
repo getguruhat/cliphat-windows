@@ -74,7 +74,7 @@ internal static class PanelSmokeTest
     /// Every translation is picked by its culture, has no empty text, and its templates format.
     private static void CheckStrings()
     {
-        foreach (var name in new[] { "es-ES", "de-DE", "fr-FR", "pt-BR", "ja-JP", "zh-CN", "ko-KR" })
+        foreach (var name in new[] { "es-ES", "de-DE", "fr-FR", "it-IT", "pt-BR", "ja-JP", "zh-CN", "ko-KR" })
         {
             var strings = Strings.For(new CultureInfo(name));
             var values = typeof(Strings).GetProperties().Where(p => p.PropertyType == typeof(string)).Select(p => (string)p.GetValue(strings)!).ToList();

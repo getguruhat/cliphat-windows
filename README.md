@@ -6,7 +6,7 @@ ClipHat is a native Windows clipboard history app from GuruHat. It stores copied
 
 ## Install the latest build
 
-Download the ready-to-install package: [ClipHat-1.5.0-Windows-Setup.exe](https://github.com/getguruhat/cliphat-windows/releases/download/v1.5.0-windows/ClipHat-1.5.0-Windows-Setup.exe).
+Download the ready-to-install package: [ClipHat-1.5.1-Windows-Setup.exe](https://github.com/getguruhat/cliphat-windows/releases/download/v1.5.1-windows/ClipHat-1.5.1-Windows-Setup.exe).
 
 Run the installer on Windows 10 (version 1903 or later) or Windows 11 (x64), then launch ClipHat. ClipHat uses the .NET Framework 4.8 that comes with Windows; on an older Windows 10 build without it, the installer links to Microsoft's download. Windows may show a SmartScreen warning because this community build is not code signed.
 
@@ -27,7 +27,7 @@ When upgrading, quit ClipHat from its notification-area menu, run the new instal
 - Right-click a card to copy, pin/unpin an item, delete it, or open a link. Item pins protect entries from retention; the toolbar thumbtack controls whether the panel stays open. The red × on each card deletes that entry.
 - Settings uses General, History, Privacy, and About tabs, matching the macOS layout. Configure startup, previews, retention, and ignored applications; the About tab displays the ClipHat app icon.
 
-ClipHat follows your Windows display language in English, Spanish, German, French, Portuguese, Japanese, Simplified Chinese, and Korean (the text is in `Strings.cs`), and uses English for any other language.
+ClipHat follows your Windows display language in English, Spanish, German, French, Italian, Portuguese, Japanese, Simplified Chinese, and Korean (the text is in `Strings.cs`), and uses English for any other language.
 
 ClipHat stores history in `%LOCALAPPDATA%\GuruHat\ClipHat`. There are no accounts, cloud services, analytics, or network calls. Text is limited to 1 MB, images to 10 MB, and individual files to 20 MB. Copied folders are skipped.
 

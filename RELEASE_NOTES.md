@@ -1,12 +1,15 @@
 ClipHat keeps a history of what you copy on Windows: text, links, images, and files. Press **Ctrl+Shift+V** to slide it in, then click anything to copy it again.
 
 **Install**
-1. Download `ClipHat-1.5.0-Windows-Setup.exe` below and run it.
+1. Download `ClipHat-1.5.1-Windows-Setup.exe` below and run it.
 2. If Windows SmartScreen says it protected your PC, choose **More info › Run anyway**. The installer isn't code-signed yet.
 3. Copy something, then press **Ctrl+Shift+V**.
 
-**What's new in 1.5.0**
-- ClipHat now speaks your language: it follows your Windows display language in Spanish, German, French, Portuguese, Japanese, Simplified Chinese, and Korean, and uses English for any other language
+**What's new in 1.5.1**
+- ClipHat now speaks Italian too, with shortcuts written as Ctrl+Maiusc+V
+
+**What was new in 1.5.0**
+- ClipHat now speaks your language: it follows your Windows display language in Spanish, German, French, Italian, Portuguese, Japanese, Simplified Chinese, and Korean, and uses English for any other language
 - Keyboard shortcuts are shown the way your Windows writes them, such as Strg+Umschalt+V in German
 - A new top hat icon in the notification area and on the installer
 
