@@ -134,7 +134,7 @@ internal sealed class ClipHatContext : ApplicationContext
         window = new MainWindow(history, Restore, OpenSettings, Quit);
         window.FormClosing += (_, e) => { if (e.CloseReason != CloseReason.ApplicationExitCall) { e.Cancel = true; window.ClosePanel(); } };
         window.HotkeyPressed += () => { if (window.Visible) window.ClosePanel(); else Show(); };
-        tray = new NotifyIcon { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath), Text = "ClipHat — Ctrl+Shift+V", Visible = true };
+        tray = new NotifyIcon { Icon = TrayIcon(), Text = "ClipHat — Ctrl+Shift+V", Visible = true };
         tray.DoubleClick += (_, _) => Show();
         tray.ContextMenuStrip = new ContextMenuStrip();
         tray.ContextMenuStrip.Items.Add("Open history", null, (_, _) => Show());
@@ -149,6 +149,12 @@ internal sealed class ClipHatContext : ApplicationContext
         // The Store starts ClipHat without --show-history, so the first run opens the panel too.
         if (showHistory || history.FirstRun) Show();
         if (history.FirstRun) history.Save();
+    }
+    /// The white hat with dark outlines, so it shows on light and dark taskbars, at the system's small icon size.
+    private static Icon TrayIcon()
+    {
+        using var stream = typeof(ClipHatContext).Assembly.GetManifestResourceStream("ClipHat.TrayIcon.ico") ?? throw new InvalidOperationException("ClipHat tray icon is missing.");
+        return new Icon(stream, SystemInformation.SmallIconSize);
     }
     private void Show()
     {

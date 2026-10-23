@@ -26,6 +26,8 @@
     <!-- The MSIX startup task and temp folder APIs (used by the Store version). -->
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.1" />
     <EmbeddedResource Include="assets/ClipHat.png" LogicalName="ClipHat.AppIcon.png" />
+    <!-- The notification-area icon, from cliphat_menu_icon.png. -->
+    <EmbeddedResource Include="assets/ClipHatTray.ico" LogicalName="ClipHat.TrayIcon.ico" />
   </ItemGroup>
   <!-- Windows supplies the WinRT metadata at run time; don't copy the .winmd files. -->
   <Target Name="SkipWinmdCopy" AfterTargets="ResolveAssemblyReferences">
