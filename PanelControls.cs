@@ -151,7 +151,7 @@ internal sealed class HistoryCard : Control
             var data = new DataObject();
             if (Item.Payload != null)
             {
-                var folder = Path.Combine(Path.GetTempPath(), "ClipHat", Guid.NewGuid().ToString("N")); Directory.CreateDirectory(folder);
+                var folder = Path.Combine(Startup.ExportFolder, Guid.NewGuid().ToString("N")); Directory.CreateDirectory(folder);
                 var path = Path.Combine(folder, Path.GetFileName(Item.FileName ?? "Image.png")); File.Copy(Item.Payload, path);
                 data.SetData(DataFormats.FileDrop, new[] { path });
             }

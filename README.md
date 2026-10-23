@@ -6,9 +6,9 @@ ClipHat is a native Windows clipboard history app from GuruHat. It stores copied
 
 ## Install the latest build
 
-Download the ready-to-install package: [ClipHat-1.3.1-Windows-Setup.exe](https://github.com/getguruhat/cliphat-windows/releases/download/v1.3.1-windows/ClipHat-1.3.1-Windows-Setup.exe).
+Download the ready-to-install package: [ClipHat-1.4.0-Windows-Setup.exe](https://github.com/getguruhat/cliphat-windows/releases/download/v1.4.0-windows/ClipHat-1.4.0-Windows-Setup.exe).
 
-Run the installer on Windows 10 or 11 (x64), then launch ClipHat. Windows may show a SmartScreen warning because this community build is not code signed.
+Run the installer on Windows 10 (version 1903 or later) or Windows 11 (x64), then launch ClipHat. ClipHat uses the .NET Framework 4.8 that comes with Windows; on an older Windows 10 build without it, the installer links to Microsoft's download. Windows may show a SmartScreen warning because this community build is not code signed.
 
 When upgrading, quit ClipHat from its notification-area menu, run the new installer, and launch it again. The sliding panel has no Windows title bar. Settings displays the installed version.
 
@@ -31,13 +31,18 @@ ClipHat stores history in `%LOCALAPPDATA%\GuruHat\ClipHat`. There are no account
 
 ## Build
 
-The source is a .NET 8 Windows Forms project. On Windows with the .NET 8 SDK:
+The source is a Windows Forms project that targets .NET Framework 4.8, which comes with Windows 10 and 11, so the build is a small folder (`ClipHat.exe`, its `.config`, and the System.Text.Json DLLs) rather than a self-contained runtime. To build on your own PC you need the .NET 8 SDK (only as the compiler):
 
 ```powershell
-dotnet run --project ClipHat.csproj
+dotnet publish ClipHat.csproj -c Release -o publish
+publish\ClipHat.exe --smoke-test   # checks the panel and saves screenshots to screenshots\
 ```
 
-GitHub Actions publishes a self-contained x64 build, packages it with Inno Setup, and attaches the installer to the [Windows release](https://github.com/getguruhat/cliphat-windows/releases/tag/v1.3.1-windows).
+GitHub Actions builds it on every push, packages it with Inno Setup, and attaches the installer to the Windows release for the version in `ClipHat.csproj` (with the notes in `RELEASE_NOTES.md`).
+
+### Microsoft Store (MSIX)
+
+The same build also makes `ClipHat-<version>-x64.msix` (the **ClipHat-Windows-msix** artifact) from `msix/AppxManifest.xml`, then test-installs it on the runner. Upload that file to Partner Center as is: the Store signs it when it publishes. The `Identity` and `PublisherDisplayName` in the manifest must match Partner Center's **Product identity** page. In the packaged app, **Launch ClipHat at login** uses the package's startup task instead of the registry, files you paste or drag out are copied to the package's temp folder, and Windows removes ClipHat's history when it's uninstalled.
 
 ## Other platforms
 

@@ -1,7 +1,6 @@
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Runtime.InteropServices;
@@ -17,7 +16,9 @@ internal static class Program
     {
         using var mutex = new Mutex(true, "GuruHat.ClipHat.Windows", out var first);
         if (!first) return;
-        ApplicationConfiguration.Initialize();
+        // DPI awareness is set in App.config and app.manifest.
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
         if (args.Contains("--smoke-test")) { PanelSmokeTest.Run(); return; }
         Application.Run(new ClipHatContext(args.Contains("--show-history")));
     }
@@ -56,11 +57,14 @@ internal sealed class History
     private readonly string index;
     public List<ClipItem> Items { get; private set; } = [];
     public Settings Settings { get; private set; } = new();
+    /// No history saved yet: ClipHat's first run on this PC.
+    public bool FirstRun { get; }
     public History(string? storageFolder = null)
     {
         folder = storageFolder ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GuruHat", "ClipHat");
         Directory.CreateDirectory(folder);
         index = Path.Combine(folder, "history.json");
+        FirstRun = !File.Exists(index);
         try { Items = JsonSerializer.Deserialize<List<ClipItem>>(File.ReadAllText(index)) ?? []; } catch (IOException) { } catch (JsonException) { }
         try { Settings = JsonSerializer.Deserialize<Settings>(File.ReadAllText(Path.Combine(folder, "settings.json"))) ?? new(); } catch (IOException) { } catch (JsonException) { }
     }
@@ -88,7 +92,7 @@ internal sealed class History
     }
     public void Trim()
     {
-        var keep = Math.Clamp(Settings.Limit, 10, 5000);
+        var keep = Compat.Clamp(Settings.Limit, 10, 5000);
         foreach (var item in Items.Where(x => !x.Pinned).Skip(Math.Max(0, keep - Items.Count(x => x.Pinned))).ToArray()) Remove(item, false);
         Save();
     }
@@ -111,7 +115,7 @@ internal sealed class History
     {
         var temp = index + ".tmp";
         File.WriteAllText(temp, JsonSerializer.Serialize(Items));
-        File.Move(temp, index, true);
+        if (File.Exists(index)) File.Replace(temp, index, null); else File.Move(temp, index);
         File.WriteAllText(Path.Combine(folder, "settings.json"), JsonSerializer.Serialize(Settings));
     }
 }
@@ -142,7 +146,9 @@ internal sealed class ClipHatContext : ApplicationContext
         sequence = Native.GetClipboardSequenceNumber();
         window.EnsureHotkey(Hotkey);
         timer.Start();
-        if (showHistory) Show();
+        // The Store starts ClipHat without --show-history, so the first run opens the panel too.
+        if (showHistory || history.FirstRun) Show();
+        if (history.FirstRun) history.Save();
     }
     private void Show()
     {
@@ -196,7 +202,7 @@ internal sealed class ClipHatContext : ApplicationContext
             }
             if (item == null) return;
             item.Source = source;
-            item.Fingerprint = Convert.ToHexString(SHA256.HashData(payload ?? Encoding.UTF8.GetBytes(item.Kind + ":" + item.Text)));
+            item.Fingerprint = Compat.Sha256Hex(payload ?? Encoding.UTF8.GetBytes(item.Kind + ":" + item.Text));
             if (payload != null && !history.Items.Any(x => x.Fingerprint == item.Fingerprint)) item.Payload = history.SavePayload(payload, item.FileName!);
             history.Add(item);
             window.RefreshItems();
@@ -223,7 +229,7 @@ internal sealed class ClipHatContext : ApplicationContext
             if (item.Kind == "image" && item.Payload != null) { using var image = Image.FromFile(item.Payload); Clipboard.SetImage(new Bitmap(image)); }
             else if ((item.Kind == "document" || item.Kind == "audio") && item.Payload != null)
             {
-                var exported = Path.Combine(Path.GetTempPath(), "ClipHat", Guid.NewGuid().ToString("N"), item.FileName ?? "file");
+                var exported = Path.Combine(Startup.ExportFolder, Guid.NewGuid().ToString("N"), item.FileName ?? "file");
                 Directory.CreateDirectory(Path.GetDirectoryName(exported)!);
                 File.Copy(item.Payload, exported);
                 Clipboard.SetFileDropList(new StringCollection { exported });
@@ -252,4 +258,5 @@ internal static class Native
     [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern uint GetClipboardSequenceNumber();
     [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool RegisterHotKey(IntPtr handle, int id, uint modifiers, uint key);
     [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool UnregisterHotKey(IntPtr handle, int id);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr SendMessage(IntPtr handle, int message, IntPtr wParam, string lParam);
 }

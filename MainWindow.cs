@@ -7,7 +7,7 @@ internal sealed class MainWindow : Form
 {
     private readonly History history;
     private readonly Action<ClipItem> restore;
-    private readonly TextBox search = new() { PlaceholderText = "Search clipboard…", BorderStyle = BorderStyle.None };
+    private readonly TextBox search = new() { BorderStyle = BorderStyle.None };
     private readonly FlowLayoutPanel cards = new() { AutoScroll = true, FlowDirection = FlowDirection.TopDown, WrapContents = false };
     private readonly Panel header = new(), footer = new();
     private readonly Label count = new() { TextAlign = ContentAlignment.MiddleLeft };
@@ -49,10 +49,12 @@ internal sealed class MainWindow : Form
         pauseButton = AddButton(footer, "pause", "Pause clipboard capture", () => { history.Settings.Paused = !history.Settings.Paused; SaveAndRefresh(); });
         tackButton = AddButton(footer, "pin", "Keep panel open", TogglePanelPin);
         AddButton(footer, "gear", "Settings", () => { ClosePanel(); settings(); });
+        // EM_SETCUEBANNER: the placeholder text (TextBox.PlaceholderText is .NET Core only), shown even while focused.
+        search.HandleCreated += (_, _) => Native.SendMessage(search.Handle, 0x1501, (IntPtr)1, "Search clipboard…");
         search.TextChanged += (_, _) => RefreshItems();
         cards.Resize += (_, _) => ResizeCards();
         slideTimer.Tick += (_, _) => AdvanceSlide();
-        Deactivate += (_, _) => { if (Visible && !closing) BeginInvoke(() => { if (!ContainsFocus && !PanelPinned) ClosePanel(); }); };
+        Deactivate += (_, _) => { if (Visible && !closing) BeginInvoke(new Action(() => { if (!ContainsFocus && !PanelPinned) ClosePanel(); })); };
         Resize += (_, _) => Arrange();
         DpiChanged += (_, _) => { Arrange(); RefreshItems(); };
         Arrange(); RefreshItems();
@@ -93,18 +95,18 @@ internal sealed class MainWindow : Form
         var width = Math.Min(edgeArea.Width, Px(350));
         Bounds = new Rectangle(OffscreenX(width), edgeArea.Top, width, edgeArea.Height);
         RefreshItems();
-        slideStart = Left; slideEnd = panelSide == "Right" ? edgeArea.Right - Width : edgeArea.Left; slideStarted = Environment.TickCount64;
+        slideStart = Left; slideEnd = panelSide == "Right" ? edgeArea.Right - Width : edgeArea.Left; slideStarted = Compat.TickCount64;
         Show(); Activate(); if (searchVisible) search.Focus(); else Focus(); slideTimer.Start();
     }
     public void ClosePanel()
     {
         if (!Visible || closing) return;
-        closing = true; slideTimer.Stop(); slideStart = Left; slideEnd = OffscreenX(Width); slideStarted = Environment.TickCount64; slideTimer.Start();
+        closing = true; slideTimer.Stop(); slideStart = Left; slideEnd = OffscreenX(Width); slideStarted = Compat.TickCount64; slideTimer.Start();
     }
     private int OffscreenX(int width) => panelSide == "Right" ? edgeArea.Right : edgeArea.Left - width;
     private void AdvanceSlide()
     {
-        var progress = Math.Clamp((Environment.TickCount64 - slideStarted) / (closing ? 180.0 : 220.0), 0, 1);
+        var progress = Compat.Clamp((Compat.TickCount64 - slideStarted) / (closing ? 180.0 : 220.0), 0, 1);
         var eased = closing ? progress * progress : 1 - Math.Pow(1 - progress, 3);
         Left = slideStart + (int)Math.Round((slideEnd - slideStart) * eased);
         if (progress < 1) return;
@@ -123,7 +125,7 @@ internal sealed class MainWindow : Form
         {
             if (items.Length == 0) return true;
             var index = Array.FindIndex(items, x => x.Id == selected);
-            selected = items[Math.Clamp(index + (keyData == Keys.Down ? 1 : -1), 0, items.Length - 1)].Id;
+            selected = items[Compat.Clamp(index + (keyData == Keys.Down ? 1 : -1), 0, items.Length - 1)].Id;
             foreach (var card in cards.Controls.OfType<HistoryCard>()) { card.Selected = card.Item.Id == selected; if (card.Selected) cards.ScrollControlIntoView(card); }
             return true;
         }

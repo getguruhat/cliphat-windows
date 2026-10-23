@@ -58,7 +58,7 @@ internal static class PanelSmokeTest
     }
     private static void Pump(int milliseconds)
     {
-        var end = Environment.TickCount64 + milliseconds;
-        while (Environment.TickCount64 < end) { Application.DoEvents(); Thread.Sleep(10); }
+        var end = Compat.TickCount64 + milliseconds;
+        while (Compat.TickCount64 < end) { Application.DoEvents(); Thread.Sleep(10); }
     }
 }

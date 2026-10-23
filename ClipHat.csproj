@@ -1,16 +1,36 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <UseWindowsForms>true</UseWindowsForms>
+    <!-- .NET Framework 4.8 is part of Windows 10 (1903 and later) and 11, so the app doesn't
+         carry a runtime of its own (the self-contained .NET 8 installer was ~50 MB). -->
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Global usings are in Compat.cs: the SDK only generates the Windows Forms ones for .NET 5+. -->
+    <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>ClipHat</AssemblyName>
-    <Version>1.3.1</Version>
+    <RootNamespace>ClipHat</RootNamespace>
+    <Version>1.4.0</Version>
+    <Product>ClipHat</Product>
+    <Company>GuruHat</Company>
     <ApplicationIcon>assets\ClipHat.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <DebugType>embedded</DebugType>
+    <!-- Keep the packages' .xml docs and .pdb files out of the install folder. -->
+    <AllowedReferenceRelatedFileExtensions>none</AllowedReferenceRelatedFileExtensions>
+    <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <!-- The MSIX startup task and temp folder APIs (used by the Store version). -->
+    <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.1" />
     <EmbeddedResource Include="assets/ClipHat.png" LogicalName="ClipHat.AppIcon.png" />
   </ItemGroup>
+  <!-- Windows supplies the WinRT metadata at run time; don't copy the .winmd files. -->
+  <Target Name="SkipWinmdCopy" AfterTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)' == '.winmd'" />
+    </ItemGroup>
+  </Target>
 </Project>

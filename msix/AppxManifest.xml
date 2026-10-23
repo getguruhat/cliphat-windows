@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX package for the Microsoft Store. The Store signs the package when it publishes it.
+  Identity Name and Publisher, and PublisherDisplayName, must match Partner Center's
+  Product management › Product identity page for ClipHat. Publisher is the GuruHat account's
+  (the same as AI Meter); check Name once the ClipHat name is reserved. The build fills in
+  Version from ClipHat.csproj.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap desktop rescap">
+  <Identity Name="GuruHat.ClipHat" Publisher="CN=05CD3C36-E7B1-44AF-9610-697D5FFE04B6" Version="0.0.0.0" ProcessorArchitecture="x64" />
+  <Properties>
+    <DisplayName>ClipHat</DisplayName>
+    <PublisherDisplayName>GuruHat</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+  <!-- 1903 is the first Windows 10 release with .NET Framework 4.8 built in. -->
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.18362.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+  <Applications>
+    <Application Id="ClipHat" Executable="ClipHat.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="ClipHat"
+        Description="Clipboard history for Windows. Press Ctrl+Shift+V to find and reuse anything you copied."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png" />
+      <Extensions>
+        <!-- "Launch ClipHat at login". Off until the user turns it on in Settings. -->
+        <desktop:Extension Category="windows.startupTask" Executable="ClipHat.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="ClipHatStartup" Enabled="false" DisplayName="ClipHat" />
+        </desktop:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+  <!-- No internetClient: ClipHat makes no network connections. -->
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

@@ -1,4 +1,3 @@
-using Microsoft.Win32;
 using System.Drawing.Drawing2D;
 using System.Reflection;
 
@@ -32,7 +31,7 @@ internal sealed class SettingsWindow : Form
         content.Resize += (_, _) => { using var path = Theme.Rounded(new RectangleF(0, 0, content.Width, content.Height), 12); var old = content.Region; content.Region = new Region(path); old?.Dispose(); };
         FormClosed += (_, _) => history.Save();
         Shown += (_, _) => SelectPage(currentPage);
-        DpiChanged += (_, _) => BeginInvoke(() => SelectPage(currentPage));
+        DpiChanged += (_, _) => BeginInvoke(new Action(() => SelectPage(currentPage)));
         ResumeLayout(true);
     }
     internal void SelectPage(string name)
@@ -47,11 +46,12 @@ internal sealed class SettingsWindow : Form
         switch (name)
         {
             case "General":
-                Toggle(page, "Launch ClipHat at login", settings.LaunchAtLogin, value =>
+                Toggle(page, "Launch ClipHat at login", Startup.Enabled, value =>
                 {
-                    using var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
-                    if (value) key.SetValue("ClipHat", '"' + Application.ExecutablePath + '"'); else key.DeleteValue("ClipHat", false);
-                    settings.LaunchAtLogin = value;
+                    Startup.Enabled = value;
+                    settings.LaunchAtLogin = Startup.Enabled;
+                    // Windows can refuse (the Store version's startup task); show what it actually is.
+                    if (settings.LaunchAtLogin != value) BeginInvoke(new Action(() => SelectPage("General")));
                 });
                 Row(page, "Keyboard shortcut", new Label { Text = "Ctrl + Shift + V", AutoSize = true, ForeColor = Theme.Muted });
                 Toggle(page, "Large image and document previews (2× cards)", settings.LargePreviews, x => settings.LargePreviews = x);
@@ -68,7 +68,7 @@ internal sealed class SettingsWindow : Form
                 var exit = ActionButton("Quit ClipHat", () => { Close(); quit?.Invoke(); }); exit.ForeColor = Color.Firebrick; page.Controls.Add(exit);
                 break;
             case "History":
-                var limit = new NumericUpDown { Minimum = 10, Maximum = 5000, Increment = 10, Value = Math.Clamp(settings.Limit, 10, 5000), Width = 92 };
+                var limit = new NumericUpDown { Minimum = 10, Maximum = 5000, Increment = 10, Value = Compat.Clamp(settings.Limit, 10, 5000), Width = 92 };
                 limit.ValueChanged += (_, _) => { settings.Limit = (int)limit.Value; history.Trim(); };
                 Row(page, "Keep clipboard items", limit);
                 Note(page, "Oldest unpinned items are removed first. Pinned items are always kept.");
