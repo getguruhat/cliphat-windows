@@ -112,6 +112,10 @@ internal sealed record Strings
     public string License { get; init; } = "Free & Open Source · MIT License";
     public string NoTracking { get; init; } = "No accounts. No cloud. No analytics.";
 
+    // Update check (not in the Microsoft Store version)
+    public string UpdateTitle { get; init; } = "{0} {1} is available";
+    public string UpdateMessage { get; init; } = "You have version {0}. Download the new version from GitHub?";
+
     public string ItemCount(int count) => count == 1 ? OneItem : string.Format(Items, count);
     public string DayName(DateTime date) => date.ToString(DayFormat, Culture);
 
@@ -195,7 +199,9 @@ internal sealed record Strings
             AppIconName = "Icono de la aplicación ClipHat",
             VersionLine = "Versión {0} · Parte de GuruHat",
             License = "Gratis y de código abierto · Licencia MIT",
-            NoTracking = "Sin cuentas. Sin nube. Sin análisis."
+            NoTracking = "Sin cuentas. Sin nube. Sin análisis.",
+            UpdateTitle = "{0} {1} está disponible",
+            UpdateMessage = "Tienes la versión {0}. ¿Quieres descargar la nueva versión desde GitHub?"
         },
         ["de"] = new()
         {
@@ -274,7 +280,9 @@ internal sealed record Strings
             AppIconName = "ClipHat-App-Symbol",
             VersionLine = "Version {0} · Teil von GuruHat",
             License = "Kostenlos & Open Source · MIT-Lizenz",
-            NoTracking = "Kein Konto. Keine Cloud. Keine Analysen."
+            NoTracking = "Kein Konto. Keine Cloud. Keine Analysen.",
+            UpdateTitle = "{0} {1} ist verfügbar",
+            UpdateMessage = "Sie haben Version {0}. Möchten Sie die neue Version von GitHub herunterladen?"
         },
         ["fr"] = new()
         {
@@ -352,7 +360,9 @@ internal sealed record Strings
             AppIconName = "Icône de l'application ClipHat",
             VersionLine = "Version {0} · Fait partie de GuruHat",
             License = "Gratuit et open source · Licence MIT",
-            NoTracking = "Pas de compte. Pas de cloud. Pas d'analyse."
+            NoTracking = "Pas de compte. Pas de cloud. Pas d'analyse.",
+            UpdateTitle = "{0} {1} est disponible",
+            UpdateMessage = "Vous avez la version {0}. Télécharger la nouvelle version depuis GitHub ?"
         },
         ["it"] = new()
         {
@@ -430,7 +440,9 @@ internal sealed record Strings
             AppIconName = "Icona dell'app ClipHat",
             VersionLine = "Versione {0} · Parte di GuruHat",
             License = "Gratuito e open source · Licenza MIT",
-            NoTracking = "Nessun account. Nessun cloud. Nessuna analisi."
+            NoTracking = "Nessun account. Nessun cloud. Nessuna analisi.",
+            UpdateTitle = "{0} {1} è disponibile",
+            UpdateMessage = "Hai la versione {0}. Vuoi scaricare la nuova versione da GitHub?"
         },
         ["pt"] = new()
         {
@@ -507,7 +519,9 @@ internal sealed record Strings
             AppIconName = "Ícone do aplicativo ClipHat",
             VersionLine = "Versão {0} · Parte do GuruHat",
             License = "Gratuito e de código aberto · Licença MIT",
-            NoTracking = "Sem contas. Sem nuvem. Sem análises."
+            NoTracking = "Sem contas. Sem nuvem. Sem análises.",
+            UpdateTitle = "{0} {1} está disponível",
+            UpdateMessage = "Você tem a versão {0}. Baixar a nova versão no GitHub?"
         },
         ["ja"] = new()
         {
@@ -584,7 +598,9 @@ internal sealed record Strings
             AppIconName = "ClipHat アプリのアイコン",
             VersionLine = "バージョン {0} · GuruHat の一部",
             License = "無料のオープン ソース · MIT ライセンス",
-            NoTracking = "アカウント不要。クラウドなし。分析なし。"
+            NoTracking = "アカウント不要。クラウドなし。分析なし。",
+            UpdateTitle = "{0} {1} が利用可能です",
+            UpdateMessage = "現在のバージョンは {0} です。GitHub から新しいバージョンをダウンロードしますか?"
         },
         ["zh-Hans"] = new()
         {
@@ -661,7 +677,9 @@ internal sealed record Strings
             AppIconName = "ClipHat 应用图标",
             VersionLine = "版本 {0} · GuruHat 出品",
             License = "免费开源 · MIT 许可证",
-            NoTracking = "无需账户。无云端。无分析。"
+            NoTracking = "无需账户。无云端。无分析。",
+            UpdateTitle = "{0} {1} 现已推出",
+            UpdateMessage = "你当前的版本是 {0}。要从 GitHub 下载新版本吗？"
         },
         ["ko"] = new()
         {
@@ -738,7 +756,9 @@ internal sealed record Strings
             AppIconName = "ClipHat 앱 아이콘",
             VersionLine = "버전 {0} · GuruHat 제공",
             License = "무료 오픈 소스 · MIT 라이선스",
-            NoTracking = "계정 없음. 클라우드 없음. 분석 없음."
+            NoTracking = "계정 없음. 클라우드 없음. 분석 없음.",
+            UpdateTitle = "{0} {1} 업데이트가 있습니다",
+            UpdateMessage = "현재 버전은 {0}입니다. GitHub에서 새 버전을 다운로드할까요?"
         }
     };
 

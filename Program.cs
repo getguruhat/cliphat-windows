@@ -48,6 +48,8 @@ internal sealed class Settings
     public string PanelSide { get; set; } = "Left";
     public bool PanelPinned { get; set; }
     public bool LargePreviews { get; set; }
+    /// The newest version the update dialog was shown for, so it asks once per version.
+    public string? AnnouncedUpdate { get; set; }
     public List<string> IgnoredApps { get; set; } = ["1Password", "Bitwarden", "KeePass", "KeePassXC", "Dashlane", "Enpass"];
 }
 
@@ -126,6 +128,10 @@ internal sealed class ClipHatContext : ApplicationContext
     private readonly MainWindow window;
     private readonly NotifyIcon tray;
     private readonly Timer timer;
+    /// The first update check runs a minute after launch, then once a day.
+    private readonly Timer updateTimer = new() { Interval = 60 * 1000 };
+    private readonly ToolStripMenuItem update = new() { Visible = false };
+    private string? updatePage;
     private uint sequence;
     private bool restoring;
     private const int Hotkey = 0x4231;
@@ -137,6 +143,8 @@ internal sealed class ClipHatContext : ApplicationContext
         tray = new NotifyIcon { Icon = TrayIcon(), Text = "ClipHat — " + Strings.Current.HistoryShortcut, Visible = true };
         tray.DoubleClick += (_, _) => Show();
         tray.ContextMenuStrip = new ContextMenuStrip();
+        update.Click += (_, _) => { if (updatePage is not null) Open(updatePage); };
+        tray.ContextMenuStrip.Items.Add(update);
         tray.ContextMenuStrip.Items.Add(Strings.Current.OpenHistory, null, (_, _) => Show());
         tray.ContextMenuStrip.Items.Add(Strings.Current.PauseCapture, null, (_, _) => TogglePause());
         tray.ContextMenuStrip.Items.Add(Strings.Current.Settings, null, (_, _) => OpenSettings());
@@ -149,7 +157,33 @@ internal sealed class ClipHatContext : ApplicationContext
         // The Store starts ClipHat without --show-history, so the first run opens the panel too.
         if (showHistory || history.FirstRun) Show();
         if (history.FirstRun) history.Save();
+        // The Microsoft Store keeps its version up to date.
+        if (!Startup.Packaged)
+        {
+            updateTimer.Tick += async (_, _) =>
+            {
+                updateTimer.Interval = 24 * 60 * 60 * 1000;
+                await CheckForUpdateAsync();
+            };
+            updateTimer.Start();
+        }
     }
+    /// Shows the newer release in the notification-area menu, and asks once per version whether to download it.
+    private async Task CheckForUpdateAsync()
+    {
+        if (await UpdateCheck.NewerAsync("getguruhat/cliphat-windows") is not { } release) return;
+        var text = Strings.Current;
+        var title = string.Format(text.UpdateTitle, "ClipHat", release.Version);
+        updatePage = release.Page;
+        update.Text = title + " ›";
+        update.Visible = true;
+        if (history.Settings.AnnouncedUpdate == release.Version.ToString()) return;
+        history.Settings.AnnouncedUpdate = release.Version.ToString();
+        history.Save();
+        if (MessageBox.Show(string.Format(text.UpdateMessage, UpdateCheck.Current), title, MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+            Open(release.Page);
+    }
+    private static void Open(string url) => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     /// The white hat with dark outlines, so it shows on light and dark taskbars, at the system's small icon size.
     private static Icon TrayIcon()
     {
@@ -253,7 +287,7 @@ internal sealed class ClipHatContext : ApplicationContext
         settings.ShowDialog();
         history.Trim(); window.RefreshItems();
     }
-    private void Quit() { timer.Stop(); window.ReleaseHotkey(Hotkey); tray.Visible = false; tray.Dispose(); window.Dispose(); ExitThread(); }
+    private void Quit() { timer.Stop(); updateTimer.Stop(); window.ReleaseHotkey(Hotkey); tray.Visible = false; tray.Dispose(); window.Dispose(); ExitThread(); }
 }
 
 internal static class Native
