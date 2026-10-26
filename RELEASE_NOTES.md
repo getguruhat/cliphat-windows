@@ -1,11 +1,14 @@
 ClipHat keeps a history of what you copy on Windows: text, links, images, and files. Press **Ctrl+Shift+V** to slide it in, then click anything to copy it again.
 
 **Install**
-1. Download `ClipHat-1.5.2-Windows-Setup.exe` below and run it.
+1. Download `ClipHat-1.5.3-Windows-Setup.exe` below and run it.
 2. If Windows SmartScreen says it protected your PC, choose **More info › Run anyway**. The installer isn't code-signed yet.
 3. Copy something, then press **Ctrl+Shift+V**.
 
-**What's new in 1.5.2**
+**What's new in 1.5.3**
+- ClipHat tells you when a new version is out. It checks GitHub once a day, asks once per version whether to download it, and adds the update to the notification-area menu. The Microsoft Store version is updated by the Store instead
+
+**What was new in 1.5.2**
 - The new top hat icon everywhere: the app, the Start menu, the About page, and the installer
 
 **What was new in 1.5.1**
