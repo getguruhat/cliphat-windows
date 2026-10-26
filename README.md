@@ -38,7 +38,7 @@ dotnet publish ClipHat.csproj -c Release -o publish
 publish\ClipHat.exe --smoke-test   # checks the panel and saves screenshots to screenshots\
 ```
 
-GitHub Actions builds it on every push, packages it with Inno Setup, and attaches the installer to the Windows release for the version in `ClipHat.csproj` (with the notes in `RELEASE_NOTES.md`).
+GitHub Actions builds it on every push and packages it with Inno Setup. To publish a release, set the version in `ClipHat.csproj` and `installer.iss`, write `RELEASE_NOTES.md`, and push a matching tag, such as `git tag v1.5.3-windows && git push origin v1.5.3-windows`.
 
 ### Microsoft Store (MSIX)
 
