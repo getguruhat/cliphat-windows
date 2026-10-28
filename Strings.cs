@@ -111,6 +111,8 @@ internal sealed record Strings
     public string VersionLine { get; init; } = "Version {0} · Part of GuruHat";
     public string License { get; init; } = "Free & Open Source · MIT License";
     public string NoTracking { get; init; } = "No accounts. No cloud. No analytics.";
+    public string Support { get; init; } = "Support ClipHat";
+    public string Thanks { get; init; } = "Thank you for supporting this project!";
 
     // Update check (not in the Microsoft Store version)
     public string UpdateTitle { get; init; } = "{0} {1} is available";
@@ -200,6 +202,8 @@ internal sealed record Strings
             VersionLine = "Versión {0} · Parte de GuruHat",
             License = "Gratis y de código abierto · Licencia MIT",
             NoTracking = "Sin cuentas. Sin nube. Sin análisis.",
+            Support = "Apoyar ClipHat",
+            Thanks = "¡Gracias por apoyar este proyecto!",
             UpdateTitle = "{0} {1} está disponible",
             UpdateMessage = "Tienes la versión {0}. ¿Quieres descargar la nueva versión desde GitHub?"
         },
@@ -281,6 +285,8 @@ internal sealed record Strings
             VersionLine = "Version {0} · Teil von GuruHat",
             License = "Kostenlos & Open Source · MIT-Lizenz",
             NoTracking = "Kein Konto. Keine Cloud. Keine Analysen.",
+            Support = "ClipHat unterstützen",
+            Thanks = "Vielen Dank für Ihre Unterstützung!",
             UpdateTitle = "{0} {1} ist verfügbar",
             UpdateMessage = "Sie haben Version {0}. Möchten Sie die neue Version von GitHub herunterladen?"
         },
@@ -361,6 +367,8 @@ internal sealed record Strings
             VersionLine = "Version {0} · Fait partie de GuruHat",
             License = "Gratuit et open source · Licence MIT",
             NoTracking = "Pas de compte. Pas de cloud. Pas d'analyse.",
+            Support = "Soutenir ClipHat",
+            Thanks = "Merci de soutenir ce projet !",
             UpdateTitle = "{0} {1} est disponible",
             UpdateMessage = "Vous avez la version {0}. Télécharger la nouvelle version depuis GitHub ?"
         },
@@ -441,6 +449,8 @@ internal sealed record Strings
             VersionLine = "Versione {0} · Parte di GuruHat",
             License = "Gratuito e open source · Licenza MIT",
             NoTracking = "Nessun account. Nessun cloud. Nessuna analisi.",
+            Support = "Sostieni ClipHat",
+            Thanks = "Grazie per il tuo sostegno a questo progetto!",
             UpdateTitle = "{0} {1} è disponibile",
             UpdateMessage = "Hai la versione {0}. Vuoi scaricare la nuova versione da GitHub?"
         },
@@ -520,6 +530,8 @@ internal sealed record Strings
             VersionLine = "Versão {0} · Parte do GuruHat",
             License = "Gratuito e de código aberto · Licença MIT",
             NoTracking = "Sem contas. Sem nuvem. Sem análises.",
+            Support = "Apoiar o ClipHat",
+            Thanks = "Obrigado por apoiar este projeto!",
             UpdateTitle = "{0} {1} está disponível",
             UpdateMessage = "Você tem a versão {0}. Baixar a nova versão no GitHub?"
         },
@@ -599,6 +611,8 @@ internal sealed record Strings
             VersionLine = "バージョン {0} · GuruHat の一部",
             License = "無料のオープン ソース · MIT ライセンス",
             NoTracking = "アカウント不要。クラウドなし。分析なし。",
+            Support = "ClipHat を支援",
+            Thanks = "このプロジェクトを支援していただきありがとうございます！",
             UpdateTitle = "{0} {1} が利用可能です",
             UpdateMessage = "現在のバージョンは {0} です。GitHub から新しいバージョンをダウンロードしますか?"
         },
@@ -678,6 +692,8 @@ internal sealed record Strings
             VersionLine = "版本 {0} · GuruHat 出品",
             License = "免费开源 · MIT 许可证",
             NoTracking = "无需账户。无云端。无分析。",
+            Support = "支持 ClipHat",
+            Thanks = "感谢您支持这个项目！",
             UpdateTitle = "{0} {1} 现已推出",
             UpdateMessage = "你当前的版本是 {0}。要从 GitHub 下载新版本吗？"
         },
@@ -757,6 +773,8 @@ internal sealed record Strings
             VersionLine = "버전 {0} · GuruHat 제공",
             License = "무료 오픈 소스 · MIT 라이선스",
             NoTracking = "계정 없음. 클라우드 없음. 분석 없음.",
+            Support = "ClipHat 후원하기",
+            Thanks = "이 프로젝트를 후원해 주셔서 감사합니다!",
             UpdateTitle = "{0} {1} 업데이트가 있습니다",
             UpdateMessage = "현재 버전은 {0}입니다. GitHub에서 새 버전을 다운로드할까요?"
         }

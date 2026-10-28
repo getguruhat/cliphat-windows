@@ -115,6 +115,11 @@ internal sealed class SettingsWindow : Form
                 Center(page, string.Format(t.VersionLine, version?.ToString(3)), 10, false, Theme.Muted);
                 Center(page, t.License, 9, false, Theme.Muted);
                 Center(page, t.NoTracking, 9, false, Theme.Muted);
+                // GuruHat's shared donation page (same as AI Meter and PC Mode).
+                var support = new LinkLabel { Text = "\u2665 " + t.Support, Width = 550, Height = 28, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 10.5f, FontStyle.Bold), LinkColor = Theme.Blue, ActiveLinkColor = Theme.Blue, LinkBehavior = LinkBehavior.HoverUnderline, Margin = new Padding(0, 10, 0, 2) };
+                support.LinkClicked += (_, _) => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.paypal.com/donate/?hosted_button_id=FHGYWD46722JS") { UseShellExecute = true });
+                page.Controls.Add(support);
+                Center(page, t.Thanks, 9, false, Theme.Muted);
                 break;
         }
         // Pages are created after the form has already scaled; scale new controls
